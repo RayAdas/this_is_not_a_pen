@@ -126,8 +126,8 @@ float coordinatTransform::BulletModel(float x, float v, float angle){
 
 cv::Point2f coordinatTransform::PCoord2ICoord(cv::Point2f pixelPoint)
 {
-    pixelPoint.x -= 640;
-    pixelPoint.y -= 512;
+    pixelPoint.x -= 320;
+    pixelPoint.y -= 256;
     pixelPoint.x *= length_per_pixel;
     pixelPoint.y *= length_per_pixel;
     return pixelPoint;

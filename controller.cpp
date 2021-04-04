@@ -49,15 +49,15 @@ void controller::mainCycle()
         ActiveModel = ArmorModel;
         ArmorModel->setEnemyColor(teamColor_red);
         {
-            unsigned char lingwu = 0x05;
-            unsigned char lingyi = 0x01;
+            const unsigned char lingwu = 0x05;
+            const unsigned char lingyi = 0x01;
             cv::Point2f target;
             Uart1Keeper->set(&lingyi,FirePermit);
             Uart1Keeper->set(&lingwu,AOrR);
             ActiveModel->amend(VideoSource->getImage());
             target = ActiveModel->getFuturePosition(0);;
             //cout<<"time:"<<tm.getTimeMilli()<<endl;
-            target = CameraTransformer->PCoord2ICoord(target);
+            target = CameraTransformer->PCoord2ICoord(target);//注意图像大小
             target = CameraTransformer->ICoord2CCoord(target);
             target.x = target.x * 180 / M_PI;
             target.y = target.y * 180 / M_PI;

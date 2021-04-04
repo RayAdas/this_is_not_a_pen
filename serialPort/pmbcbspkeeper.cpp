@@ -79,10 +79,10 @@ void UartKeeper_Infantry::set(const void* data,data_label label)
 {
     switch(label)
     {
-    case YawAngle:memcpy((void*)S_DATA[3],data,4);break;
-    case PitchAngle:memcpy((void*)S_DATA[7],data,4);break;
-    case AOrR:memcpy((void*)S_DATA[2],data,1);break;
-    case FirePermit:memcpy((void*)S_DATA[11],data,1);break;
+    case YawAngle:memcpy((void*)&(S_DATA[3]),data,4);break;
+    case PitchAngle:memcpy((void*)&(S_DATA[7]),data,4);break;
+    case AOrR:memcpy((void*)&(S_DATA[2]),data,1);break;
+    case FirePermit:memcpy((void*)&(S_DATA[11]),data,1);break;
     }
 }
 //#############################以下为哨兵部分######################
@@ -99,11 +99,10 @@ UartKeeper_Guard::UartKeeper_Guard(serialPort* uart1)
     this->EnemyColorBuffer.writeOver();
     *(this->EnemyColorBuffer.Back) = teamColor_red;
     this->EnemyColorBuffer.writeOver();
-    sent_length = 13;
+    sent_length = 12;
     this->S_DATA[0] = 0xFF;
     this->S_DATA[1] = 0x01;
-    this->S_DATA[2] = 0x01;
-    this->S_DATA[12] = 0XBB;
+    this->S_DATA[11] = 0XBB;
 }
 void UartKeeper_Guard::boot(void){}
 void UartKeeper_Guard::read(axisData* &AxisData,teamColor* &EnemyColor,aimMod* &AimMod)
@@ -120,9 +119,9 @@ void UartKeeper_Guard::set(const void* data,data_label label)
 {
     switch(label)
     {
-    case YawAngle:memcpy((void*)S_DATA[3],data,4);break;
-    case PitchAngle:memcpy((void*)S_DATA[7],data,4);break;
+    case YawAngle:memcpy((void*)&(S_DATA[2]),data,4);break;
+    case PitchAngle:memcpy((void*)&(S_DATA[6]),data,4);break;
     case AOrR:;break;
-    case FirePermit:memcpy((void*)S_DATA[11],data,1);break;
+    case FirePermit:memcpy((void*)&(S_DATA[10]),data,1);break;
     }}
 void UartKeeper_Guard::KeeperCycle(){}

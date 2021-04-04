@@ -67,19 +67,19 @@ bool serialPort::Init()
 
 void serialPort::send_data(const unsigned char* data,const int length)
 {
-    write(fd,&data,length);
+    write(fd,data,length);
 }
 bool serialPort:: get_data()
 {
     static unsigned char r[22];
     tcflush(fd,TCIFLUSH);
     read(fd,&r,sizeof(r));
-    /*
+
     if(r[0]==0xAA && r[1]==0xAA)
     {
         memcpy(receiceData,r,sizeof(r));
         return 1;
     }
-    */
+
     return 0;
 }
