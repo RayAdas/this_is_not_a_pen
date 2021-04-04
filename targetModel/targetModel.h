@@ -3,10 +3,7 @@
 
 #include "videoSource/videoSource.h"
 #include "serialPort/pmbcbspkeeper.h"
-#ifndef TEAMCOLOR
-#define TEAMCOLOR
-enum teamColor{teamColor_red = 0,teamColor_blue = 1};
-#endif
+#include "preferences.h"
 
 class targetModel
 {

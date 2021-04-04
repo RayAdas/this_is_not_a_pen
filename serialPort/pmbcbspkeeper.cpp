@@ -1,6 +1,6 @@
 #include "pmbcbspkeeper.h"
 
-PMBCBSPKeeper::PMBCBSPKeeper(serialPort* uart1)
+UartKeeper_Infantry::UartKeeper_Infantry(serialPort* uart1)
 {
     this->Uart1 = uart1;
     *(this->AimModBuffer.Back) = manualMode;
@@ -11,14 +11,19 @@ PMBCBSPKeeper::PMBCBSPKeeper(serialPort* uart1)
     *(this->EnemyColorBuffer.Back) = teamColor_red;
     this->EnemyColorBuffer.writeOver();
     *(this->EnemyColorBuffer.Back) = teamColor_red;
-    this->EnemyColorBuffer.writeOver();}
-
-void PMBCBSPKeeper::boot(void)
-{
-    PMBCBSPThread = std::thread(&PMBCBSPKeeper::PMBCBSPCycle,this);
+    this->EnemyColorBuffer.writeOver();
+    sent_length = 13;
+    this->S_DATA[0] = 0xAA;
+    this->S_DATA[1] = 0xAA;
+    this->S_DATA[12] = 0XBB;
 }
 
-void PMBCBSPKeeper::PMBCBSPCycle()
+void UartKeeper_Infantry::boot(void)
+{
+    KeeperThread = std::thread(&UartKeeper_Infantry::KeeperCycle,this);
+}
+
+void UartKeeper_Infantry::KeeperCycle()
 {
     while(true)
     {
@@ -59,9 +64,65 @@ void PMBCBSPKeeper::PMBCBSPCycle()
     }
 }
 
-void PMBCBSPKeeper::read(axisData* &AxisData,teamColor* &EnemyColor,aimMod* &AimMod)
+void UartKeeper_Infantry::read(axisData* &AxisData,teamColor* &EnemyColor,aimMod* &AimMod)
 {
     AxisData = AxisDataBuffer.read();
     EnemyColor = EnemyColorBuffer.read();
     AimMod = AimModBuffer.read();
 }
+
+void UartKeeper_Infantry::write()
+{
+    this->Uart1->send_data(this->S_DATA,this->sent_length);
+}
+void UartKeeper_Infantry::set(const void* data,data_label label)
+{
+    switch(label)
+    {
+    case YawAngle:memcpy((void*)S_DATA[3],data,4);break;
+    case PitchAngle:memcpy((void*)S_DATA[7],data,4);break;
+    case AOrR:memcpy((void*)S_DATA[2],data,1);break;
+    case FirePermit:memcpy((void*)S_DATA[11],data,1);break;
+    }
+}
+//#############################以下为哨兵部分######################
+UartKeeper_Guard::UartKeeper_Guard(serialPort* uart1)
+{
+    this->Uart1 = uart1;
+
+    *(this->AimModBuffer.Back) = robotMod;
+    this->AimModBuffer.writeOver();
+    *(this->AimModBuffer.Back) = robotMod;
+    this->AimModBuffer.writeOver();
+
+    *(this->EnemyColorBuffer.Back) = teamColor_red;
+    this->EnemyColorBuffer.writeOver();
+    *(this->EnemyColorBuffer.Back) = teamColor_red;
+    this->EnemyColorBuffer.writeOver();
+    sent_length = 13;
+    this->S_DATA[0] = 0xFF;
+    this->S_DATA[1] = 0x01;
+    this->S_DATA[2] = 0x01;
+    this->S_DATA[12] = 0XBB;
+}
+void UartKeeper_Guard::boot(void){}
+void UartKeeper_Guard::read(axisData* &AxisData,teamColor* &EnemyColor,aimMod* &AimMod)
+{
+    AxisData = nullptr;
+    EnemyColor = EnemyColorBuffer.read();
+    AimMod = AimModBuffer.read();
+}
+void UartKeeper_Guard::write()
+{
+    this->Uart1->send_data(this->S_DATA,this->sent_length);
+}
+void UartKeeper_Guard::set(const void* data,data_label label)
+{
+    switch(label)
+    {
+    case YawAngle:memcpy((void*)S_DATA[3],data,4);break;
+    case PitchAngle:memcpy((void*)S_DATA[7],data,4);break;
+    case AOrR:;break;
+    case FirePermit:memcpy((void*)S_DATA[11],data,1);break;
+    }}
+void UartKeeper_Guard::KeeperCycle(){}

@@ -10,7 +10,7 @@
 class controller
 {
 public:
-    controller(videoSource *,coordinatTransform *,serialPort *);
+    controller(videoSource *,coordinatTransform *,UartKeeper *);
     void mainCycle();
     void boot();
 public:
@@ -18,8 +18,7 @@ public:
 private:
     videoSource *VideoSource = nullptr;
     coordinatTransform *CameraTransformer = nullptr;
-    serialPort *Uart1 = nullptr;
-    PMBCBSPKeeper *Uart1Keeper = nullptr;
+    UartKeeper *Uart1Keeper = nullptr;
     targetModel *BuffModel = nullptr;
     targetModel *ArmorModel = nullptr;
     targetModel *ActiveModel = nullptr;

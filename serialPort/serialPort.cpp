@@ -65,9 +65,9 @@ bool serialPort::Init()
     return true;
 }
 
-void serialPort::send_data(const struct contralData & data)
+void serialPort::send_data(const unsigned char* data,const int length)
 {
-    write(fd,&data,sizeof(data));
+    write(fd,&data,length);
 }
 bool serialPort:: get_data()
 {
