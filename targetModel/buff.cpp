@@ -354,7 +354,7 @@ double buffTickUtility::markACenterLikePoint(cv::Point2f canddidate,const armorT
     }
 }
 
-void buffModel::amend(const ImageData* imageData)//修正预测模型
+void buffModel::amend(ImageData* imageData)//修正预测模型
 {
 
     this->lastBuffTick = buffTickUtility::Mat2buffTick(imageData->SrcImage,this->EnemyColor);
