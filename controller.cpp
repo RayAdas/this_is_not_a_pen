@@ -1,11 +1,10 @@
 #include "controller.h"
 
-controller::controller(videoSource *VideoSource,coordinatTransform *CameraTransformer,serialPort *uart1)
+controller::controller(videoSource *VideoSource,coordinatTransform *CameraTransformer,UartKeeper *uart1)
 {
     this->VideoSource = VideoSource;
     this->CameraTransformer = CameraTransformer;
-    this->Uart1 = uart1;
-    this->Uart1Keeper = new PMBCBSPKeeper(uart1);
+    this->Uart1Keeper = uart1;
     this->BuffModel = new buffModel;
     this->ArmorModel = new armorModel(CameraTransformer);
 }
@@ -50,23 +49,22 @@ void controller::mainCycle()
         ActiveModel = ArmorModel;
         ArmorModel->setEnemyColor(teamColor_red);
         {
-
+            const unsigned char lingwu = 0x05;
+            const unsigned char lingyi = 0x01;
             cv::Point2f target;
-            contralData dataA;
-            dataA.flags = 1;
-            dataA.label = 0X05;
-
+            Uart1Keeper->set(&lingyi,FirePermit);
+            Uart1Keeper->set(&lingwu,AOrR);
             ActiveModel->amend(VideoSource->getImage());
             target = ActiveModel->getFuturePosition(0);;
             //cout<<"time:"<<tm.getTimeMilli()<<endl;
-            target = CameraTransformer->PCoord2ICoord(target);
+            target = CameraTransformer->PCoord2ICoord(target);//注意图像大小
             target = CameraTransformer->ICoord2CCoord(target);
             target.x = target.x * 180 / M_PI;
             target.y = target.y * 180 / M_PI;
-            dataA.yawAngle = (-1) * target.x;
-            dataA.pitchAngle = target.y;
-            std::cout<<dataA.yawAngle<<"|"<<dataA.pitchAngle<<std::endl;
-            //Uart1->send_data(dataA);
+            target.x = (-1) * target.x;
+            Uart1Keeper->set(&target.x,YawAngle);
+            Uart1Keeper->set(&target.y,PitchAngle);
+            Uart1Keeper->write();
 
         }
         tm.stop();

@@ -74,6 +74,7 @@ HEADERS += \
     tool/triplebuffering.h \
     serialPort/pmbcbspkeeper.h \
     trajectoryCalculation.h \
-    videoSource/galaxycamera.h
+    videoSource/galaxycamera.h \
+    preferences.h
 
 DISTFILES +=

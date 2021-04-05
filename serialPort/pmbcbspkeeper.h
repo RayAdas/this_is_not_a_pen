@@ -3,11 +3,9 @@
 #include "serialPort/serialPort.h"
 #include "tool/triplebuffering.h"
 #include <thread>
+#include "preferences.h"
 
-#ifndef TEAMCOLOR
-#define TEAMCOLOR
-enum teamColor{teamColor_red = 0,teamColor_blue = 1};
-#endif
+enum data_label{YawAngle,PitchAngle,FirePermit,AOrR};//A0rR用于指示相对角和绝对角
 
 struct axisData
 {
@@ -20,21 +18,49 @@ struct axisData
 
 enum aimMod{manualMode,buffMod,robotMod};
 
-class PMBCBSPKeeper
+class UartKeeper
 {
 public:
-    PMBCBSPKeeper(serialPort* uart1);
-    void read(axisData* &AxisData,teamColor* &EnemyColor,aimMod* &AimMod);
-    void boot(void);
-private:
-    void PMBCBSPCycle();
-private:
+    virtual void boot(void) = 0;
+    virtual void read(axisData* &AxisData,teamColor* &EnemyColor,aimMod* &AimMod) = 0;
+    virtual void write() = 0;
+    virtual void set(const void* data,data_label label) = 0;
+protected:
+    virtual void KeeperCycle() = 0;
+protected:
+    int sent_length;
+    std::thread KeeperThread;
+    serialPort* Uart1 = nullptr;
     tripleBuffering<axisData> AxisDataBuffer;
     tripleBuffering<teamColor> EnemyColorBuffer;
     tripleBuffering<aimMod> AimModBuffer;
-
-    serialPort* Uart1 = nullptr;
-    std::thread PMBCBSPThread;
 };
 
+class UartKeeper_Infantry:public UartKeeper
+{
+public:
+    UartKeeper_Infantry(serialPort* uart1);
+    void boot(void) override;
+    void read(axisData* &AxisData,teamColor* &EnemyColor,aimMod* &AimMod) override;
+    void write() override;
+    void set(const void* data,data_label label) override;
+private:
+    void KeeperCycle() override;
+private:
+    unsigned char S_DATA[13];
+};
+
+class UartKeeper_Guard:public UartKeeper
+{
+public:
+    UartKeeper_Guard(serialPort* uart1);
+    void boot(void) override;
+    void read(axisData* &AxisData,teamColor* &EnemyColor,aimMod* &AimMod) override;
+    void write() override;
+    void set(const void* data,data_label label) override;
+private:
+    void KeeperCycle() override;
+private:
+    unsigned char S_DATA[13];
+};
 #endif // PMBCBSPKEEPER_H

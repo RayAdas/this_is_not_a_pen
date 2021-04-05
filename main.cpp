@@ -14,6 +14,8 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
+#include "preferences.h"
+
 #include "targetModel/buff.h"
 #include "videoSource/videoSource.h"
 #include "serialPort/serialPort.h"
@@ -23,7 +25,6 @@
 #include "tool/kalman.h"
 #include "trajectoryCalculation.h"
 #include "videoSource/galaxycamera.h"
-#define MAIN_PATH (string)"/home/ware_/114514"
 
 using namespace Dahua::GenICam;
 using namespace Dahua::Infra;
@@ -33,37 +34,16 @@ using namespace cv;
 
 int main()
 {
-    /*
-    galaxycamera gx;
-    Mat imgs;
-    gx.initial_camera();
-    while(1){
-        gx.getimage(imgs);
-        imshow("imgs",imgs);
-        waitKey(1);
-    }
-    */
-
-    //读入主配置文件参数
-    /*cv::FileStorage mainArgumentsRead(MAIN_PATH + "/MainArguments.xml",cv::FileStorage::READ);
-    if(!mainArgumentsRead.isOpened())
-    {
-        cout<<"Failed to open settings file at: "<<MAIN_PATH + "/MainArguments.xml"<<endl;
-        exit;
-    }
-    string videoSourceArgumentsRelativePath = (string)mainArgumentsRead["VideoSourceArgumentsPath"];
-    */
-
     //创建视频源
     videoSource *VideoSource = videoSourceUtility::sourceInit();
 
     //创建角度解算器
     cv::Mat cameraInternalParam = (cv::Mat_<double>(3,3) <<
-                         1358.507 , 0 , 337.4941 ,
-                          0       , 1351.934 , 257.2953 ,
-                          0       , 0       , 1       );
+                                   1358.507 , 0 , 337.4941 ,
+                                   0       , 1351.934 , 257.2953 ,
+                                   0       , 0       , 1       );
     cv::Mat distortionParam = (cv::Mat_<double>(1,5) <<
-                         -0.0804,0.3165,0,0,0);
+                               -0.0804,0.3165,0,0,0);
     cv::Size2f smallArmor;smallArmor.height = 141;smallArmor.width = 125;
     cv::Size2f bigArmor;bigArmor.height = 243.2;smallArmor.width = 125;
     coordinatTransform CameraTransformer(cameraInternalParam,
@@ -74,11 +54,19 @@ int main()
     //创建串口
     char dev[]={"/dev/ttyTHS2"};
     serialPort Uart1(dev);
+    UartKeeper *UKeeper;
 
+    switch(THIS_ROBOT_TYPE)
+    {
+    case Robot_Type::Hero:UKeeper = new UartKeeper_Infantry(&Uart1);break;
+    case Robot_Type::Infantry:UKeeper = new UartKeeper_Infantry(&Uart1);break;
+    case Robot_Type::Guard:UKeeper = new UartKeeper_Guard(&Uart1);break;
+    case Robot_Type::Drone:UKeeper = new UartKeeper_Infantry(&Uart1);break;
+    }
     //创建弹道解算器
 
     //创建控制器
-    controller Controller(VideoSource,&CameraTransformer,&Uart1);
+    controller Controller(VideoSource,&CameraTransformer,UKeeper);
 
     while(true)
     {
@@ -108,5 +96,6 @@ int main()
         //移交控制器
         Controller.boot();
     }
+    delete UKeeper;
     return 0;
 }
