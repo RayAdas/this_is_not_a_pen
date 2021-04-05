@@ -63,7 +63,7 @@ class buffModel:public targetModel
 {
 public:
     buffModel();
-    void amend(const ImageData* imageData) override;//修正预测模型
+    void amend(ImageData* imageData) override;//修正预测模型
     //void amend(const axisData* AxisData) override;//修正预测模型
     cv::Point2f getFuturePosition(const float offset) override;//获得预测点
 private:
