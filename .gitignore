@@ -2,6 +2,7 @@
 *.d
 
 *.avi
+RMOverTest.pro.user.*
 
 # Compiled Object files
 *.slo
