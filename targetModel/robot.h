@@ -6,33 +6,34 @@
 #include "targetModel.h"
 #include "coordinateTransform/coordinateTransform.h"
 #include "preferences.h"
+#include "videoSource/videoSource.h"
 using namespace std;
 using namespace cv;
 
 
-//该结构体存储关于装甲检测的所有参数
-struct ArmorParam
+//该结构体存储关于灯条检测的所有参数
+struct LightParam
 {
     int Light_Point_min;                   //灯条最小点集个数
     int Light_Point_max;
-    float disRatio_max=5;
-    float disRatio_min=1.1;
+    float DBH_max=5;
+    float DBH_min=1.1;
     float Light_Max_Min2Points;            //轮廓点集很小的最大，最小比限幅
     float Light_Normal_Max_Min2Points;     //轮廓点集正常的最大，最小比限幅
-    float angleij_center_diffMax;          //灯条自身角度与两灯条夹角的最大差值
-    float angleij_diffMax;                 //灯条旋转角度的最大差值
-    float len_diff_kp;                     //灯条最长边相差的最大比例
+    float angle_center_difference;          //灯条自身角度与两灯条夹角的最大差值
+    float angle_difference;                 //灯条旋转角度的最大差值
+    float height_difference_ratio;                     //灯条最长边相差的最大比例
 
     //为各项参数赋默认值
-    ArmorParam()
+    LightParam()
     {
         Light_Point_min=8;                //灯条最小点集个数
         Light_Point_max=2100;
         Light_Max_Min2Points=2.3;         //轮廓点集很小的最大，最小比限幅
         Light_Normal_Max_Min2Points=1.8;  //轮廓点集正常的最大，最小比限幅
-        angleij_center_diffMax=13;        //灯条自身角度与两灯条夹角的最大差值
-        angleij_diffMax=15;               //灯条旋转角度的最大差值
-        len_diff_kp=4;                    //灯条最长边相差的最大比例
+        angle_center_difference=13;        //灯条自身角度与两灯条夹角的最大差值
+        angle_difference=15;               //灯条旋转角度的最大差值
+        height_difference_ratio=4;                    //灯条最长边相差的最大比例
     }
 };
 
@@ -103,30 +104,35 @@ public:
     Robot_Type            robot;
     ObjectType       armorType;
     sense_of_roRect armorsense;
+    vector<Point2f> armorPoints;
+
 
 };
 
 class armorModel:public targetModel
 {
 public:
-    armorModel(coordinatTransform *a)                                                   ;
-    void judgeArrmorState()                                    ;    //判断图像处理roi区size
-    ArmorFindFlag ArrmorDection()                              ;    //find装甲板主要函数
-    void histMaker(Mat& src_hist)                              ;    //画出图像直方图
-    void setImage(cv::Mat& set_src)                            ;    //预处理图像
 
-    void setDigtisRecognize(bool flag)                         ;    //开关装甲板数字识别
-    void judgeArmorrType(ArmorDescriptor &a)                   ;
-    void recrodArmorStatus(bool isFoundArmor)                  ;    //记录find装甲板结果
+    armorModel(coordinatTransform*);
+    void judgeArrmorState();    //判断图像处理roi区size
+    ArmorFindFlag ArrmorDection();    //find装甲板主要函数
+    void histMaker(Mat& src_hist);    //画出图像直方图
+    void setImage(cv::Mat& set_src);    //预处理图像
+
+    void setDigtisRecognize(bool flag);    //开关装甲板数字识别
+    void judgeArmorrType(ArmorDescriptor &a);
+    void recrodArmorStatus(bool isFoundArmor);    //记录find装甲板结果
     void getLightLen(vector<Point2f> &lightPoint2fs,float &len);    //获取装甲板最长灯条长度
+    void getArmorImagePoint2f(ArmorDescriptor &armor, vector<Point2f> &point2fs);
 
 public:
+
     Mat frame,mask;
     cv::Mat cameraInternalParam;
     cv::Mat distortionParam;
     float yaw=0,pitch=0;
     bool EnemyColor ;                                //检测的装甲板颜色
-    ArmorParam Param;                                //装甲板描述的结构体
+    LightParam Light;                                //装甲板描述的结构体
     Point2f offset_roi_point;
     Size ImageSize;
     Size roiImageSize;                               //找到的装甲板大小
@@ -134,6 +140,7 @@ public:
     ArmorDescriptor targetArrmor;                    // 目标装甲板
     cv::RotatedRect targetArrmor2FindRoi;
     vector<LightDescriptor> lightCountersRoRect;     // 筛选出来的单个灯条vector
+    double armorDistance=0;
 
 private:
     ArmorFindFlag _armorFindFlag;
@@ -163,7 +170,7 @@ public:
     cv::Point2f getFuturePosition(const float offset) override;//获得预测点
 
 private:
-    coordinatTransform *pnpsolve;
+    coordinatTransform* pnpsolve;
     Point2f GetArmorCenter();
     void setInputImage(Mat input);
     void Pretreatment();

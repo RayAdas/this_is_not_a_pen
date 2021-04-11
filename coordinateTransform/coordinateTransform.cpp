@@ -7,9 +7,16 @@ coordinatTransform::coordinatTransform(cv::Mat cameraInternalParam,
 {
     this->cameraInternalParam = cameraInternalParam;
     this->distortionParam = distortionParam;
-
+/*
     float smallArmorHalfWidth = smallArmor.width / 2;
     float smallArmorHalfHeight = smallArmor.height / 2;
+
+    float smallArmorHalfWidth = 32;
+    float smallArmorHalfHeight = 27;
+    */
+
+    float smallArmorHalfWidth = 70.5;
+    float smallArmorHalfHeight = 62.5;
     cv::Point3f worldPoints;
 
     smallArmorPoint3f.clear();
@@ -24,8 +31,10 @@ coordinatTransform::coordinatTransform(cv::Mat cameraInternalParam,
     worldPoints=cv::Point3f(smallArmorHalfWidth,-smallArmorHalfHeight,0) ;//右下角点
     smallArmorPoint3f.emplace_back(worldPoints);
 
-    float bigArmorHalfWidth   =121.6 ;
-    float bigArmorHalfHeight  =62.5;
+//    float bigArmorHalfWidth   =121.6 ;
+//    float bigArmorHalfHeight  =62.5;
+    float bigArmorHalfWidth   =116;
+    float bigArmorHalfHeight  =26;
 
 
     bigArmorPoint3f.clear();
@@ -39,7 +48,8 @@ coordinatTransform::coordinatTransform(cv::Mat cameraInternalParam,
     bigArmorPoint3f.emplace_back(worldPoints);
 }
 
-cv::Point3f coordinatTransform::PNP(std::vector<cv::Point2f>&xy,bool SIZE,double &distance){
+cv::Point3f coordinatTransform::PNP(std::vector<cv::Point2f>&xy,bool SIZE,double &distance,float &yaw,float &pitch)
+{
     cv::Mat rvec,tvec;
     if(SIZE==false){
         //big armor
@@ -56,73 +66,18 @@ cv::Point3f coordinatTransform::PNP(std::vector<cv::Point2f>&xy,bool SIZE,double
     distance=sqrt(X0*X0+Y0*Y0+Z0*Z0);
 //this position need more accuraciation
     //plz ask me for more information and decision,thx
-}
 
 
-void coordinatTransform::PNPcompensateShot(vector<cv::Point2f> &Point2fs, bool symbol,float shotV, float &yaw, float &pitch){
-    cv::Mat rvec;
-    cv::Mat tvec;
+    yaw = atan(X0/distance);
+    pitch = atan(Y0/distance);
 
-    if(symbol==true)       //true是校装甲版，false是大装甲版                                                                  //检测到是小装甲
-    {
-        solvePnP(smallArmorPoint3f,Point2fs,cameraInternalParam,distortionParam,rvec,tvec);  //得到相机外参参数，[r|t]；
-    }
-    else if(symbol==false)
-    {
-        solvePnP(bigArmorPoint3f,Point2fs,cameraInternalParam,distortionParam,rvec,tvec);  //得到相机外参参数，[r|t]；
-    }
-
-    double X0=tvec.at<double>(0,0);                                             //X轴上世界coordinate相对摄像头coordinate的平移
-    double Y0=tvec.at<double>(0,1);                                             //Y轴上世界coordinate相对摄像头coordinate的平移
-    double Z0=tvec.at<double>(0,2);
-
-    cv::Point3f postion(X0/10,Y0/10,Z0/10);
-    Transform(postion,yaw,pitch,shotV);
+        //将弧度转化为角度
+    yaw = yaw * (180 / PI);
+    pitch = pitch * (180 / PI);
 
 }
 
 
-void coordinatTransform::Transform(cv::Point3f &postion, float &yaw, float &pitch,float v) {
-  pitch =
-      -GetPitch((postion.z + offset_.z) / 100, -(postion.y + offset_.y) / 100, v)*180.0/PI + (float)(offset_pitch_ );
-  //yaw positive direction :anticlockwise
-  yaw = -(float) (atan2(postion.x + offset_.x, postion.z + offset_.z)) *180.0/PI + (float)(offset_yaw_);
-}
-
-void coordinatTransform::Init(float x,float y,float z,float pitch,float yaw, float init_v, float init_k){
-    offset_.x = x;
-    offset_.y = y;
-    offset_.z = z;
-    offset_pitch_ = pitch;
-    offset_yaw_ = yaw;
-   // init_v_ = init_v;
-    init_k_ = init_k;
-}
-
-float coordinatTransform::GetPitch(float x, float y, float v){
-    float y_temp, y_actual, dy;
-    float a;
-    y_temp = y;
-    // by iteration
-    for (int i = 0; i < 20; i++) {
-      a = (float) atan2(y_temp, x);
-      y_actual = BulletModel(x, v, a);
-      dy = y - y_actual;
-      y_temp = y_temp + dy;
-      if (fabsf(dy) < 0.001) {
-        break;
-      }
-      //printf("iteration num %d: angle %f,temp target y:%f,err of y:%f\n",i+1,a*180/3.1415926535,yTemp,dy);
-    }
-    return a;
-}
-
-float coordinatTransform::BulletModel(float x, float v, float angle){
-    float t, y;
-    t = (float)((exp(init_k_ * x) - 1) / (init_k_ * v * cos(angle)));
-    y = (float)(v * sin(angle) * t - GRAVITY * t * t / 2);
-    return y;
-}
 
 cv::Point2f coordinatTransform::PCoord2ICoord(cv::Point2f pixelPoint)
 {

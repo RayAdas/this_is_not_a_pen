@@ -643,6 +643,7 @@ Point2f armorModel::GetArmorCenter()
             }
 
             targetArrmorTemp=digtisArmorTemp[mask];
+            
             targetArrmorTemp.armorPoints = digtisArmorTemp[mask].armorPoints;
 
 

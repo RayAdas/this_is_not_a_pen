@@ -1,7 +1,9 @@
 TEMPLATE = app
 CONFIG += console c++11
+CONFIG += c++11
 CONFIG -= app_bundle
 CONFIG -= qt
+QMAKE_CXXFLAGS += -std=c++0x
 QMAKE_CXXFLAGS += -D_GLIBCXX_USE_CXX11_ABI=0
 LIBS += /usr/local/lib/libopencv_imgproc.so \
         /usr/local/lib/libopencv_highgui.so \
