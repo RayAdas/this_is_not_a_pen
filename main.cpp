@@ -39,11 +39,19 @@ int main()
 
     //创建角度解算器
     cv::Mat cameraInternalParam = (cv::Mat_<double>(3,3) <<
-                                   1358.507 , 0 , 337.4941 ,
-                                   0       , 1351.934 , 257.2953 ,
-                                   0       , 0       , 1       );
+                                       644.531787 , 0 , 320 ,
+                                       0       , 642.090508 , 256 ,
+                                       0       , 0       , 1       );
+    /*cv::Mat cameraInternalParam = (cv::Mat_<double>(3,3) <<
+                                   1289.063574 , 0 , 320 ,
+                                   0       , 1284.181016 , 256 ,
+                                   0       , 0       , 1       );*/
+    /*cv::Mat cameraInternalParam = (cv::Mat_<double>(3,3) <<
+                                   1289.063574 , 0 , 639.5 ,
+                                   0       , 1284.181016 , 511.5 ,
+                                   0       , 0       , 1       );*/
     cv::Mat distortionParam = (cv::Mat_<double>(1,5) <<
-                               -0.0804,0.3165,0,0,0);
+                               -0.071912,0.078401,0.000264,-0.002826,0.113940);
     cv::Size2f smallArmor;smallArmor.height = 141;smallArmor.width = 125;
     cv::Size2f bigArmor;bigArmor.height = 243.2;smallArmor.width = 125;
     coordinatTransform CameraTransformer(cameraInternalParam,
