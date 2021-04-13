@@ -5,7 +5,7 @@
 #include <thread>
 #include "preferences.h"
 
-enum data_label{YawAngle,PitchAngle,FirePermit,AOrR};//A0rR用于指示相对角和绝对角
+enum data_label{YawAngle,PitchAngle,FirePermit,AOrR,YunTaiMode};//A0rR用于指示相对角和绝对角//YunTaiMode云台模式
 
 struct axisData
 {
@@ -16,7 +16,7 @@ struct axisData
     float AAV_pitch = 0;//AAV = AbsoluteAngularVelocity
 };
 
-enum aimMod{manualMode,buffMod,robotMod};
+enum aimMod{manualMode,buffMode,robotMode};
 
 class UartKeeper
 {
@@ -33,7 +33,7 @@ protected:
     serialPort* Uart1 = nullptr;
     tripleBuffering<axisData> AxisDataBuffer;
     tripleBuffering<teamColor> EnemyColorBuffer;
-    tripleBuffering<aimMod> AimModBuffer;
+    tripleBuffering<aimMod> AimModeBuffer;
 };
 
 class UartKeeper_Infantry:public UartKeeper

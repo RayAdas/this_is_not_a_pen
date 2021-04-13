@@ -767,7 +767,7 @@ Point2f armorModel::GetArmorCenter()
     }
     else
     {
-        return Point(320,256);
+        return Point(-1,-1);
     }
 
 }
