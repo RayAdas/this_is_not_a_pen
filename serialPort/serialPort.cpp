@@ -75,6 +75,12 @@ bool serialPort:: get_data()
     tcflush(fd,TCIFLUSH);
     read(fd,&r,sizeof(r));
 
+    for(int i=0;i<22;i++)
+    {
+        printf("%x|",r[i]);
+    }
+    printf("\n");
+
     if(r[0]==0xAA && r[1]==0xAA)
     {
         memcpy(receiceData,r,sizeof(r));

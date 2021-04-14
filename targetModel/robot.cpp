@@ -3,7 +3,7 @@
 #include <math.h>
 
 //armorModel::armorModel() = default;//这玩意是干嘛的？
-#define VISUAL_ROBOT
+//#define VISUAL_ROBOT
 //#define DRAW_PICTURE
 //#define SHOW_DATA
 LightDescriptor::LightDescriptor()
@@ -171,7 +171,6 @@ armorModel::armorModel(coordinatTransform *a)
     heightRatio=4;
     enableDigitsRecognize=false;
 
-    EnemyColor=false;     //false是红色，true是蓝色
 }
 void armorModel::setInputImage(Mat input) {
     frame = input.clone();
@@ -210,7 +209,7 @@ void armorModel::Pretreatment() {
     cv::split(frame,srcColorChannels);//分离src三通道
     //B,G,R
 
-    if(!EnemyColor)        //red，！blue
+    if(EnemyColor)        //red，！blue
     {
         cv::subtract(srcColorChannels[0],srcColorChannels[2],mask);//通道相减
         cv::threshold(mask,mask,40,255,cv::THRESH_BINARY);//通道相减的灰度图进行二值化

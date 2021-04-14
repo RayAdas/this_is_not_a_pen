@@ -106,7 +106,7 @@ UartKeeper_Guard::UartKeeper_Guard(serialPort* uart1)
 }
 void UartKeeper_Guard::boot(void)
 {
-    KeeperThread = std::thread(&UartKeeper_Infantry::KeeperCycle,this);
+    KeeperThread = std::thread(&UartKeeper_Guard::KeeperCycle,this);
 }
 void UartKeeper_Guard::read(axisData* &AxisData,teamColor* &EnemyColor,aimMod* &AimMod)
 {

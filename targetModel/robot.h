@@ -131,7 +131,6 @@ public:
     cv::Mat cameraInternalParam;
     cv::Mat distortionParam;
     float yaw=0,pitch=0;
-    bool EnemyColor ;                                //检测的装甲板颜色
     LightParam Light;                                //装甲板描述的结构体
     Point2f offset_roi_point;
     Size ImageSize;
