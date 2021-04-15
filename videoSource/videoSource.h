@@ -35,7 +35,7 @@ public:
     ImageData* getImage() override;
 public:
     //camera CAMERA;//摄像头对象
-    galaxycamera CAMERA;
+    camera CAMERA;
 private:
     void cameraGrabImageCycle();
 private:

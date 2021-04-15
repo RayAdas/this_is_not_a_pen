@@ -38,20 +38,22 @@ int main()
     videoSource *VideoSource = videoSourceUtility::sourceInit();
 
     //创建角度解算器
+
     cv::Mat cameraInternalParam = (cv::Mat_<double>(3,3) <<
                                        644.531787 , 0 , 320 ,
                                        0       , 642.090508 , 256 ,
                                        0       , 0       , 1       );
-    /*cv::Mat cameraInternalParam = (cv::Mat_<double>(3,3) <<
-                                   1289.063574 , 0 , 320 ,
-                                   0       , 1284.181016 , 256 ,
-                                   0       , 0       , 1       );*/
-    /*cv::Mat cameraInternalParam = (cv::Mat_<double>(3,3) <<
-                                   1289.063574 , 0 , 639.5 ,
-                                   0       , 1284.181016 , 511.5 ,
-                                   0       , 0       , 1       );*/
     cv::Mat distortionParam = (cv::Mat_<double>(1,5) <<
                                -0.071912,0.078401,0.000264,-0.002826,0.113940);
+
+    /*
+    cv::Mat cameraInternalParam = (cv::Mat_<double>(3,3) <<
+                                       654.494446 , 0 , 320 ,
+                                       0       , 652.645170 , 256 ,
+                                       0       , 0       , 1       );
+    cv::Mat distortionParam = (cv::Mat_<double>(1,5) <<
+                               -0.074136,0.160001,-0.000273,-0.002312,0.102756);
+                               */
     cv::Size2f smallArmor;smallArmor.height = 141;smallArmor.width = 125;
     cv::Size2f bigArmor;bigArmor.height = 243.2;smallArmor.width = 125;
     coordinatTransform CameraTransformer(cameraInternalParam,

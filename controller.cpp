@@ -55,13 +55,12 @@ void controller::mainCycle()
             Uart1Keeper->set(&lingyi,FirePermit);
             Uart1Keeper->set(&lingwu,AOrR);
             ActiveModel->amend(VideoSource->getImage());
-            target = ActiveModel->getFuturePosition(0);;
-            //cout<<"time:"<<tm.getTimeMilli()<<endl;
-            target = CameraTransformer->PCoord2ICoord(target);//注意图像大小
-            target = CameraTransformer->ICoord2CCoord(target);
-            target.x = target.x * 180 / M_PI;
-            target.y = target.y * 180 / M_PI;
-            target.x = (-1) * target.x;
+            target = ActiveModel->getFuturePosition(0);            //cout<<"time:"<<tm.getTimeMilli()<<endl;
+            //target = CameraTransformer->PCoord2ICoord(target);//注意图像大小
+            //target = CameraTransformer->ICoord2CCoord(target);
+            //target.x = target.x * 180 / M_PI;
+            //target.y = target.y * 180 / M_PI;
+            //target.x = (-1) * target.x;
             Uart1Keeper->set(&target.x,YawAngle);
             Uart1Keeper->set(&target.y,PitchAngle);
             Uart1Keeper->write();

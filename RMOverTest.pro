@@ -29,9 +29,9 @@ win32:CONFIG(release, debug|release): LIBS += -L/opt/DahuaTech/DependsInclude/De
 else:win32:CONFIG(debug, debug|release): LIBS += -L/opt/DahuaTech/DependsInclude/Depends/ -lMVSDK
 else:unix: LIBS += -L/opt/DahuaTech/DependsInclude/Depends/ -lMVSDK
 
-win32:CONFIG(release, debug|release): LIBS += -L/opt/GALAXY/ -lgxiapi -lpthread
-else:win32:CONFIG(debug, debug|release): LIBS += -L/opt/GALAXY/ -lgxiapi -lpthread
-else:unix: LIBS += -L/opt/GALAXY/ -lgxiapi -lpthread
+#win32:CONFIG(release, debug|release): LIBS += -L/opt/GALAXY/ -lgxiapi -lpthread
+#else:win32:CONFIG(debug, debug|release): LIBS += -L/opt/GALAXY/ -lgxiapi -lpthread
+#else:unix: LIBS += -L/opt/GALAXY/ -lgxiapi -lpthread
 
 #INCLUDEPATH += $$PWD/Depends
 #DEPENDPATH += $$PWD/Depends
@@ -59,7 +59,7 @@ SOURCES += \
     tool/triplebuffering.cpp \
     serialPort/pmbcbspkeeper.cpp \
     trajectoryCalculation.cpp \
-    videoSource/galaxycamera.cpp
+    #videoSource/galaxycamera.cpp
 
 HEADERS += \
     serialPort/serialPort.h \
@@ -76,7 +76,7 @@ HEADERS += \
     tool/triplebuffering.h \
     serialPort/pmbcbspkeeper.h \
     trajectoryCalculation.h \
-    videoSource/galaxycamera.h \
+    #videoSource/galaxycamera.h \
     preferences.h
 
 DISTFILES +=
