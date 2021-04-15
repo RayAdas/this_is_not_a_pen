@@ -12,39 +12,39 @@ struct ImageData//图像信息
     timeval timestamp;//时间戳
 };
 
-class videoSource
+class VideoSource
 {
 public:
-    videoSource();
+    VideoSource();
     virtual bool Init() = 0;
     virtual void startPush() = 0;//开始自动读入视频
     virtual ImageData* getImage() = 0;//返回最新一张图片的引用,并返回数组下标
     cv::Size2i ImageSize;
-    tripleBuffering<ImageData> ImageBuffer;
+    TripleBuffering<ImageData> ImageBuffer;
 protected:
     std::thread VideoPushThread;//startPush函数的推流线程
 
 };
 
-class cameraVideoSource:public videoSource//使用摄像头时
+class CameraVideoSource:public VideoSource//使用摄像头时
 {
 public:
-    cameraVideoSource();
+    CameraVideoSource();
     bool Init() override;
     void startPush() override;
     ImageData* getImage() override;
 public:
     //camera CAMERA;//摄像头对象
-    galaxycamera CAMERA;
+    GalaxyCamera CAMERA;
 private:
     void cameraGrabImageCycle();
 private:
 };
 
 
-class videoSourceUtility
+class VideoSourceUtility
 {
 public:
-    static videoSource* sourceInit();
+    static VideoSource* sourceInit();
 };
 #endif // VIDEOSOURCE_H

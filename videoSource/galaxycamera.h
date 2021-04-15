@@ -10,10 +10,10 @@
 #include <opencv2/imgproc.hpp>
 using namespace cv;
 using namespace std;
-class galaxycamera
+class GalaxyCamera
 {
 public:
-    galaxycamera();
+    GalaxyCamera();
     bool cameraInit();
     bool IGetFrame(Mat &src);
 private:

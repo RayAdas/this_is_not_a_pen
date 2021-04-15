@@ -156,7 +156,7 @@ void ArmorDescriptor::setRobotType(Robot_Type set)
 }
 
 
-armorModel::armorModel(coordinatTransform *a)
+ArmorModel::ArmorModel(CoordinatTransform *a)
 {
     pnpsolve = a;
 
@@ -172,13 +172,13 @@ armorModel::armorModel(coordinatTransform *a)
     enableDigitsRecognize=false;
 
 }
-void armorModel::setInputImage(Mat input) {
+void ArmorModel::setInputImage(Mat input) {
     frame = input.clone();
     src_roi = input.clone();
     mask = input.clone();
 
 }
-void armorModel::amend(ImageData* imageData)//修正预测模型
+void ArmorModel::amend(ImageData* imageData)//修正预测模型
 {
 
     this->setInputImage(imageData->SrcImage);
@@ -187,14 +187,14 @@ void armorModel::amend(ImageData* imageData)//修正预测模型
 
 
 }
-cv::Point2f armorModel::getFuturePosition(const float offset)//获得预测点
+cv::Point2f ArmorModel::getFuturePosition(const float offset)//获得预测点
 {
 //    cout <<this->GetArmorCenter() <<endl;
     return(this->GetArmorCenter());
 }
 
 
-void armorModel::Pretreatment() {
+void ArmorModel::Pretreatment() {
 
     Mat input;
     Point p, center;
@@ -209,7 +209,7 @@ void armorModel::Pretreatment() {
     cv::split(frame,srcColorChannels);//分离src三通道
     //B,G,R
 
-    if(EnemyColor)        //red，！blue
+    if(enemy_color_)        //red，！blue
     {
         cv::subtract(srcColorChannels[0],srcColorChannels[2],mask);//通道相减
         cv::threshold(mask,mask,40,255,cv::THRESH_BINARY);//通道相减的灰度图进行二值化
@@ -316,7 +316,7 @@ bool CmpArrmor(ArmorDescriptor A1,ArmorDescriptor A2)
 }
 
 //对灯条处理完，开始对灯条进行匹配然后对装甲版做匹配
-Point2f armorModel::GetArmorCenter()
+Point2f ArmorModel::GetArmorCenter()
 {
     //将灯条从左往右排序
     sort(lightCountersRoRect.begin(),lightCountersRoRect.end(),CmpLight);            //lightCountersRoRect存储的是LightDescriptor形的数组
@@ -698,19 +698,19 @@ Point2f armorModel::GetArmorCenter()
                     if(targetArrmor.armorType==SMALL_ARMOR)
                     {
                         pnpsolve->PNP(targetArrmorTemp.armorPoints,true,armorDistance,yaw,pitch);
-                        cout << "距离：" <<armorDistance/1000 <<endl;
-                        cout << "yaw：" << yaw <<endl;
-                        cout << "pitch：" << pitch <<endl;
-                        cout << endl;
+                        //cout << "距离：" <<armorDistance/1000 <<endl;
+                        //cout << "yaw：" << yaw <<endl;
+                        //cout << "pitch：" << pitch <<endl;
+                        //cout << endl;
                     }
                     else if(targetArrmor.armorType==BIG_ARMOR)
 
                     {
                         pnpsolve->PNP(targetArrmorTemp.armorPoints,false,armorDistance,yaw,pitch);
-                        cout << "距离：" <<armorDistance/1000 <<endl;
-                        cout << "yaw：" << yaw <<endl;
-                        cout << "pitch：" << pitch <<endl;
-                        cout << endl;
+                        //cout << "距离：" <<armorDistance/1000 <<endl;
+                        //cout << "yaw：" << yaw <<endl;
+                        //cout << "pitch：" << pitch <<endl;
+                        //cout << endl;
                     }
 #ifdef SHOW_DATA
                     cout << armorDistance/1000.0 <<endl;
@@ -772,7 +772,7 @@ Point2f armorModel::GetArmorCenter()
 }
 
 
-void armorModel::judgeArmorrType(ArmorDescriptor &a)
+void ArmorModel::judgeArmorrType(ArmorDescriptor &a)
 {
 
     if(0)
@@ -786,7 +786,7 @@ void armorModel::judgeArmorrType(ArmorDescriptor &a)
 }
 
 
-void armorModel::getArmorImagePoint2f(ArmorDescriptor &armor, vector<Point2f> &point2fs)
+void ArmorModel::getArmorImagePoint2f(ArmorDescriptor &armor, vector<Point2f> &point2fs)
 {
     Point2f armorPoints[4];
     armor.points(armorPoints);
@@ -808,7 +808,7 @@ void armorModel::getArmorImagePoint2f(ArmorDescriptor &armor, vector<Point2f> &p
     }
 }
 
-double armorModel::Distance(Point2f a, Point2f b)
+double ArmorModel::Distance(Point2f a, Point2f b)
 {
     return sqrt((a.x - b.x) * (a.x - b.x) +
                 (a.y - b.y) * (a.y - b.y));
@@ -818,7 +818,7 @@ double armorModel::Distance(Point2f a, Point2f b)
  ** 得到装甲板的灯条长度，用于计算距离
  **/
 
- void  armorModel::getLightLen(vector<Point2f> &lightPoint2fs, float &len)
+ void  ArmorModel::getLightLen(vector<Point2f> &lightPoint2fs, float &len)
  {
      float leftLength =Distance(lightPoint2fs[0],lightPoint2fs[1]);
 
@@ -828,7 +828,7 @@ double armorModel::Distance(Point2f a, Point2f b)
  }
 
 
- void armorModel::recrodArmorStatus(bool isFoundArmor)
+ void ArmorModel::recrodArmorStatus(bool isFoundArmor)
  {
      if(isFoundArmor)
      {

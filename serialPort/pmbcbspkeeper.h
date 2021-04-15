@@ -22,26 +22,26 @@ class UartKeeper
 {
 public:
     virtual void boot(void) = 0;
-    virtual void read(axisData* &AxisData,teamColor* &EnemyColor,aimMod* &AimMod) = 0;
+    virtual void read(axisData* &AxisData,TeamColor* &EnemyColor,aimMod* &AimMod) = 0;
     virtual void write() = 0;
     virtual void set(const void* data,data_label label) = 0;
 protected:
     virtual void KeeperCycle() = 0;
 protected:
-    int sent_length;
-    std::thread KeeperThread;
-    serialPort* Uart1 = nullptr;
-    tripleBuffering<axisData> AxisDataBuffer;
-    tripleBuffering<teamColor> EnemyColorBuffer;
-    tripleBuffering<aimMod> AimModeBuffer;
+    int sent_length_;
+    std::thread keeper_thread_;
+    SerialPort* Uart1 = nullptr;
+    TripleBuffering<axisData> axis_data_buffer_;
+    TripleBuffering<TeamColor> enemy_color_buffer_;
+    TripleBuffering<aimMod> aim_mode_buffer_;
 };
 
 class UartKeeper_Infantry:public UartKeeper
 {
 public:
-    UartKeeper_Infantry(serialPort* uart1);
+    UartKeeper_Infantry(SerialPort* uart1);
     void boot(void) override;
-    void read(axisData* &AxisData,teamColor* &EnemyColor,aimMod* &AimMod) override;
+    void read(axisData* &AxisData,TeamColor* &EnemyColor,aimMod* &AimMod) override;
     void write() override;
     void set(const void* data,data_label label) override;
 private:
@@ -53,9 +53,9 @@ private:
 class UartKeeper_Guard:public UartKeeper
 {
 public:
-    UartKeeper_Guard(serialPort* uart1);
+    UartKeeper_Guard(SerialPort* uart1);
     void boot(void) override;
-    void read(axisData* &AxisData,teamColor* &EnemyColor,aimMod* &AimMod) override;
+    void read(axisData* &AxisData,TeamColor* &EnemyColor,aimMod* &AimMod) override;
     void write() override;
     void set(const void* data,data_label label) override;
 private:

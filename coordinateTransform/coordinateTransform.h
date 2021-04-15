@@ -6,16 +6,16 @@
 #include <opencv2/imgproc.hpp>
 #include <math.h>
 
-#include "videoSource/videoSource.h"
+#include "videoSource/videosource.h"
 
 const double PI = 3.1415926535;
 const float GRAVITY = 9.78;
 
-class coordinatTransform
+class CoordinatTransform
 {
 public:
-    coordinatTransform(cv::Mat cameraInternalParam,
-                       cv::Mat distortionParam,
+    CoordinatTransform(cv::Mat camera_internal_param_,
+                       cv::Mat distortion_param_,
                        cv::Size2f smallArmor,
                        cv::Size2f bigArmor);
     cv::Point2f PCoord2ICoord(cv::Point2f pixelPoint);
@@ -24,19 +24,18 @@ public:
 
     void init_PNP();
     static void pixel2what(cv::Point2f pixelPoint, float &angleX,float &angleY);
-    const float length_per_pixel;// = 4.8e-6;
-    const float F;// = 6.308e-03;
+    const float length_per_pixel_;// = 4.8e-6;
+    const float f_;// = 6.308e-03;
 
 
 private:
-    std::vector<cv::Point3f>smallArmorPoint3f;
-    std::vector<cv::Point3f>bigArmorPoint3f;
+    std::vector<cv::Point3f>small_armor_point3f_;
+    std::vector<cv::Point3f>big_armor_point3f_;
 
-    videoSource* VideoSource;
-    cv::Mat camera_matrix;//opencv测得的相机主要内参矩阵
-    cv::Mat distortion_coefficients;//opencv测得的相机畸变参数矩阵
-    cv::Mat cameraInternalParam;
-    cv::Mat distortionParam;
+    cv::Mat camera_matrix_;//opencv测得的相机主要内参矩阵
+    cv::Mat distortion_coefficients_;//opencv测得的相机畸变参数矩阵
+    cv::Mat camera_internal_param_;
+    cv::Mat distortion_param_;
     cv::Point3f offset_;
     float offset_pitch_;
     float offset_yaw_;

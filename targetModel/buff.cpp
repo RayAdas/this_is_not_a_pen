@@ -1,17 +1,17 @@
 #include "buff.h"
 #define VISUAL//开启可视化显示
-buffTick buffTickUtility::Mat2buffTick(const cv::Mat &src,teamColor enemyColor)
+BuffTick BuffTickUtility::Mat2buffTick(const cv::Mat &src,TeamColor enemyColor)
 {
 
     cv::Mat dst;
-    vector<armorTick> armorTicks;
-    buffTick thisBuffTick;
+    vector<ArmorTick> armorTicks;
+    BuffTick thisBuffTick;
 
 #ifdef VISUAL
     cv::Mat visual;
     src.copyTo(visual);
 #endif
-    buffTickUtility::preprocess(src,dst,enemyColor);//预处理
+    BuffTickUtility::preprocess(src,dst,enemyColor);//预处理
 #ifdef VISUAL
     cv::namedWindow("after preprocess",cv::WINDOW_NORMAL);
     cv::imshow("after preprocess",dst);
@@ -46,7 +46,7 @@ buffTick buffTickUtility::Mat2buffTick(const cv::Mat &src,teamColor enemyColor)
         }
     }
     {//对每个装甲板矩形转化为装甲板
-        armorTick thisArmor;
+        ArmorTick thisArmor;
         std::vector<int> next_nums;//下一个轮廓的下标
         float minRectCenterDistance;//中心距离最小的两个旋转矩形的距离
         float thisRectCenterDistance;
@@ -81,7 +81,7 @@ buffTick buffTickUtility::Mat2buffTick(const cv::Mat &src,teamColor enemyColor)
                     }
                 }
                 //求两个狭长内轮廓的角度均值
-                thisArmor.angle = buffTickUtility::getArmorTickAngle(rotRects[next_nums[targetPoint_num]],rotRects[next_nums[(targetPoint_num + 1) % 3]],rotRects[next_nums[(targetPoint_num + 2) % 3]]);
+                thisArmor.angle = BuffTickUtility::getArmorTickAngle(rotRects[next_nums[targetPoint_num]],rotRects[next_nums[(targetPoint_num + 1) % 3]],rotRects[next_nums[(targetPoint_num + 2) % 3]]);
                 thisArmor.targetPoint = rotRects[next_nums[targetPoint_num]].center;
                 thisArmor.aromorLight = complete;
                 thisArmor.length = rotRects[next_nums[targetPoint_num]].size.width > rotRects[next_nums[targetPoint_num]].size.height ? rotRects[next_nums[targetPoint_num]].size.width : rotRects[next_nums[targetPoint_num]].size.height;
@@ -97,7 +97,7 @@ buffTick buffTickUtility::Mat2buffTick(const cv::Mat &src,teamColor enemyColor)
             }
             else if(next_nums.size() == 1)//拥有1个内轮廓，认为是需要打击的装甲板
             {
-                thisArmor.angle = buffTickUtility::getArmorTickAngle(rotRects[next_nums[0]]);
+                thisArmor.angle = BuffTickUtility::getArmorTickAngle(rotRects[next_nums[0]]);
                 thisArmor.targetPoint = rotRects[next_nums[0]].center;
                 thisArmor.aromorLight = target;
                 thisArmor.length = rotRects[next_nums[0]].size.width > rotRects[next_nums[0]].size.height ? rotRects[next_nums[0]].size.width : rotRects[next_nums[0]].size.height;
@@ -125,7 +125,7 @@ buffTick buffTickUtility::Mat2buffTick(const cv::Mat &src,teamColor enemyColor)
         double min_mark = DBL_MAX;
         int min_mark_num = -1;
 #ifdef VISUAL
-        armorTick judge;
+        ArmorTick judge;
         cv::Point2f wishPoint,wishPoint1,wishPoint2;
 #endif
         for(i = 0;i < otherRotRect.size();i++)
@@ -242,7 +242,7 @@ buffTick buffTickUtility::Mat2buffTick(const cv::Mat &src,teamColor enemyColor)
 }
 
 
-void buffTickUtility::preprocess(const cv::Mat &src,cv::Mat &dst,teamColor enemyColor)
+void BuffTickUtility::preprocess(const cv::Mat &src,cv::Mat &dst,TeamColor enemyColor)
 {
     timeval Timmer1;
     timeval Timmer2;
@@ -273,7 +273,7 @@ void buffTickUtility::preprocess(const cv::Mat &src,cv::Mat &dst,teamColor enemy
 
 }
 
-float buffTickUtility::getArmorTickAngle(const cv::RotatedRect &tragetRotRect,const cv::RotatedRect &rotRect1,const cv::RotatedRect &rotRect2)
+float BuffTickUtility::getArmorTickAngle(const cv::RotatedRect &tragetRotRect,const cv::RotatedRect &rotRect1,const cv::RotatedRect &rotRect2)
 {
     float angle1 = -1 * rotRect1.angle;
     float angle2 = -1 * rotRect2.angle;
@@ -320,7 +320,7 @@ float buffTickUtility::getArmorTickAngle(const cv::RotatedRect &tragetRotRect,co
     return (angle1 + angle2) / 2;
 }
 
-float buffTickUtility::getArmorTickAngle(const cv::RotatedRect &tragetRotRect)
+float BuffTickUtility::getArmorTickAngle(const cv::RotatedRect &tragetRotRect)
 {
     float angle = -1 * tragetRotRect.angle;
     if(tragetRotRect.size.height < tragetRotRect.size.width)
@@ -328,7 +328,7 @@ float buffTickUtility::getArmorTickAngle(const cv::RotatedRect &tragetRotRect)
     return angle;
 }
 
-double buffTickUtility::markACenterLikePoint(cv::Point2f canddidate,const armorTick &judge)
+double BuffTickUtility::markACenterLikePoint(cv::Point2f canddidate,const ArmorTick &judge)
 {
     switch(judge.aromorLight)
     {
@@ -354,42 +354,42 @@ double buffTickUtility::markACenterLikePoint(cv::Point2f canddidate,const armorT
     }
 }
 
-void buffModel::amend(ImageData* imageData)//修正预测模型
+void BuffModel::amend(ImageData* imageData)//修正预测模型
 {
 
-    this->lastBuffTick = buffTickUtility::Mat2buffTick(imageData->SrcImage,this->EnemyColor);
-    this->lastBuffTick.timestamp = imageData->timestamp;
-    angleTick A;
-    A.angle = lastBuffTick.angle;
-    A.timestamp = lastBuffTick.timestamp.tv_sec + lastBuffTick.timestamp.tv_usec * 1e-6;
+    this->last_buff_tick_ = BuffTickUtility::Mat2buffTick(imageData->SrcImage,this->enemy_color_);
+    this->last_buff_tick_.timestamp = imageData->timestamp;
+    AngleTick A;
+    A.angle = last_buff_tick_.angle;
+    A.timestamp = last_buff_tick_.timestamp.tv_sec + last_buff_tick_.timestamp.tv_usec * 1e-6;
     static bool b = true;
     if(b)
     {
-        critiCalcore.Init(A);
+        criti_calcore_.Init(A);
         b = false;
     }
     else
     {
-        critiCalcore.amend(A);
+        criti_calcore_.amend(A);
     }
 }
-buffModel::buffModel()
+BuffModel::BuffModel()
 {
 }
-cv::Point2f buffModel::getFuturePosition(const float offset)//获得预测点
+cv::Point2f BuffModel::getFuturePosition(const float offset)//获得预测点
 {
     cv::Point2f futurePosition;
-    float angle = critiCalcore.getFutureAngle(offset);
+    float angle = criti_calcore_.getFutureAngle(offset);
     if(angle < 0)
     {
         return cv::Point2f(640,512);
     }
-    futurePosition.x = this->lastBuffTick.center.x + this->lastBuffTick.radius * cos(angle);
-    futurePosition.y = this->lastBuffTick.center.y - this->lastBuffTick.radius * sin(angle);
-    float yangjiao = TrajectoryCalculation::getElevation(distance,height + sin(angle) * radius,25);
-    yangjiao -= atan(height / distance);
+    futurePosition.x = this->last_buff_tick_.center.x + this->last_buff_tick_.radius * cos(angle);
+    futurePosition.y = this->last_buff_tick_.center.y - this->last_buff_tick_.radius * sin(angle);
+    float yangjiao = TrajectoryCalculation::getElevation(BUFF_CENTER_DISTANCE,BUFF_CENTER_HEIGHT + sin(angle) * BUFF_CENTER_RADIUS,25);
+    yangjiao -= atan(BUFF_CENTER_HEIGHT / BUFF_CENTER_DISTANCE);
 
-    futurePosition.y = lastBuffTick.center.y - this->CoordinatTransform->F * tan(yangjiao) / this->CoordinatTransform->length_per_pixel;
+    futurePosition.y = last_buff_tick_.center.y - this->coordinat_transform_->f_ * tan(yangjiao) / this->coordinat_transform_->length_per_pixel_;
     //cout<<futurePosition<<endl;
     return futurePosition;
 }

@@ -1,9 +1,9 @@
 #include "galaxycamera.h"
 
-galaxycamera::galaxycamera(){
+GalaxyCamera::GalaxyCamera(){
 
 }
-bool galaxycamera::cameraInit(){
+bool GalaxyCamera::cameraInit(){
     status=GX_STATUS_SUCCESS;
     nDeviceNum=0;
     status = GXInitLib();
@@ -28,7 +28,7 @@ bool galaxycamera::cameraInit(){
     }
     return 1;
 }
-bool galaxycamera::IGetFrame(Mat &src){
+bool GalaxyCamera::IGetFrame(Mat &src){
     if (status == GX_STATUS_SUCCESS){
     //调 用 GXDQBuf 取 一 帧 图 像
         status = GXDQBuf(hDevice, &pFrameBuffer, 1000);

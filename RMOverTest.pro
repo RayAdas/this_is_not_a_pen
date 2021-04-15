@@ -53,13 +53,13 @@ SOURCES += \
     videoSource/camera.cpp \
     main.cpp \
     tool/tool.cpp \
-    videoSource/videoSource.cpp \
     tool/kalman.cpp \
     controller.cpp \
     tool/triplebuffering.cpp \
     serialPort/pmbcbspkeeper.cpp \
     trajectoryCalculation.cpp \
-    videoSource/galaxycamera.cpp
+    videoSource/galaxycamera.cpp \
+    videoSource/videosource.cpp
 
 HEADERS += \
     serialPort/serialPort.h \
@@ -70,13 +70,13 @@ HEADERS += \
     targetModel/criticalcore.h \
     videoSource/camera.h \
     tool/tool.h \
-    videoSource/videoSource.h \
     tool/kalman.h \
     controller.h \
     tool/triplebuffering.h \
     serialPort/pmbcbspkeeper.h \
     trajectoryCalculation.h \
     videoSource/galaxycamera.h \
-    preferences.h
+    preferences.h \
+    videoSource/videosource.h
 
 DISTFILES +=

@@ -1,18 +1,18 @@
 #include "pmbcbspkeeper.h"
 
-UartKeeper_Infantry::UartKeeper_Infantry(serialPort* uart1)
+UartKeeper_Infantry::UartKeeper_Infantry(SerialPort* uart1)
 {
     this->Uart1 = uart1;
-    *(this->AimModeBuffer.Back) = manualMode;
-    this->AimModeBuffer.writeOver();
-    *(this->AimModeBuffer.Back) = manualMode;
-    this->AimModeBuffer.writeOver();
+    *(this->aim_mode_buffer_.Back) = manualMode;
+    this->aim_mode_buffer_.writeOver();
+    *(this->aim_mode_buffer_.Back) = manualMode;
+    this->aim_mode_buffer_.writeOver();
 
-    *(this->EnemyColorBuffer.Back) = teamColor_red;
-    this->EnemyColorBuffer.writeOver();
-    *(this->EnemyColorBuffer.Back) = teamColor_red;
-    this->EnemyColorBuffer.writeOver();
-    sent_length = 13;
+    *(this->enemy_color_buffer_.Back) = teamColor_red;
+    this->enemy_color_buffer_.writeOver();
+    *(this->enemy_color_buffer_.Back) = teamColor_red;
+    this->enemy_color_buffer_.writeOver();
+    sent_length_ = 13;
     this->S_DATA[0] = 0xAA;
     this->S_DATA[1] = 0xAA;
     this->S_DATA[12] = 0XBB;
@@ -20,7 +20,7 @@ UartKeeper_Infantry::UartKeeper_Infantry(serialPort* uart1)
 
 void UartKeeper_Infantry::boot(void)
 {
-    KeeperThread = std::thread(&UartKeeper_Infantry::KeeperCycle,this);
+    keeper_thread_ = std::thread(&UartKeeper_Infantry::KeeperCycle,this);
 }
 
 void UartKeeper_Infantry::KeeperCycle()
@@ -29,34 +29,34 @@ void UartKeeper_Infantry::KeeperCycle()
     {
         if(Uart1->get_data())
         {
-            switch(Uart1->receiceData[2])
+            switch(Uart1->receice_data_[2])
             {
             case 0x01://普通自瞄申请
-                *(AimModeBuffer.Back) = robotMode;
-                AimModeBuffer.writeOver();
+                *(aim_mode_buffer_.Back) = robotMode;
+                aim_mode_buffer_.writeOver();
                 //cout<<"AimMod:robotMod"<<endl;
                 break;
             case 0x02://大符自瞄申请
-                *(AimModeBuffer.Back) = buffMode;
-                AimModeBuffer.writeOver();
+                *(aim_mode_buffer_.Back) = buffMode;
+                aim_mode_buffer_.writeOver();
                 //cout<<"AimMod:buffMod"<<endl;
                 break;
             case 0x03://禁止自瞄申请
-                *(AimModeBuffer.Back) = manualMode;
-                AimModeBuffer.writeOver();
+                *(aim_mode_buffer_.Back) = manualMode;
+                aim_mode_buffer_.writeOver();
                 //cout<<"AimMod:manualMode"<<endl;
                 break;
             case 0x04:
-                AxisDataBuffer.Back->ProjectileVel = *((short*)&(Uart1->receiceData[3]));
-                AxisDataBuffer.Back->RA_yaw = *((float*)&(Uart1->receiceData[5]));
-                AxisDataBuffer.Back->RA_pitch = *((float*)&(Uart1->receiceData[9]));
-                AxisDataBuffer.Back->AAV_yaw = *((float*)&(Uart1->receiceData[13]));
-                AxisDataBuffer.Back->AAV_pitch = *((float*)&(Uart1->receiceData[17]));
-                AxisDataBuffer.writeOver();
+                axis_data_buffer_.Back->ProjectileVel = *((short*)&(Uart1->receice_data_[3]));
+                axis_data_buffer_.Back->RA_yaw = *((float*)&(Uart1->receice_data_[5]));
+                axis_data_buffer_.Back->RA_pitch = *((float*)&(Uart1->receice_data_[9]));
+                axis_data_buffer_.Back->AAV_yaw = *((float*)&(Uart1->receice_data_[13]));
+                axis_data_buffer_.Back->AAV_pitch = *((float*)&(Uart1->receice_data_[17]));
+                axis_data_buffer_.writeOver();
                 break;
             case 0x07://角色反馈
-                *(EnemyColorBuffer.Back) = Uart1->receiceData[3] == 0x00 ? teamColor_red : teamColor_blue;
-                EnemyColorBuffer.writeOver();
+                *(enemy_color_buffer_.Back) = Uart1->receice_data_[3] == 0x00 ? teamColor_red : teamColor_blue;
+                enemy_color_buffer_.writeOver();
                 break;
             default:return;
             }
@@ -64,16 +64,16 @@ void UartKeeper_Infantry::KeeperCycle()
     }
 }
 
-void UartKeeper_Infantry::read(axisData* &AxisData,teamColor* &EnemyColor,aimMod* &AimMod)
+void UartKeeper_Infantry::read(axisData* &AxisData,TeamColor* &EnemyColor,aimMod* &AimMod)
 {
-    AxisData = AxisDataBuffer.read();
-    EnemyColor = EnemyColorBuffer.read();
-    AimMod = AimModeBuffer.read();
+    AxisData = axis_data_buffer_.read();
+    EnemyColor = enemy_color_buffer_.read();
+    AimMod = aim_mode_buffer_.read();
 }
 
 void UartKeeper_Infantry::write()
 {
-    this->Uart1->send_data(this->S_DATA,this->sent_length);
+    this->Uart1->send_data(this->S_DATA,this->sent_length_);
 }
 void UartKeeper_Infantry::set(const void* data,data_label label)
 {
@@ -86,37 +86,37 @@ void UartKeeper_Infantry::set(const void* data,data_label label)
     }
 }
 //#############################以下为哨兵部分######################
-UartKeeper_Guard::UartKeeper_Guard(serialPort* uart1)
+UartKeeper_Guard::UartKeeper_Guard(SerialPort* uart1)
 {
     this->Uart1 = uart1;
 
-    *(this->AimModeBuffer.Back) = robotMode;
-    this->AimModeBuffer.writeOver();
-    *(this->AimModeBuffer.Back) = robotMode;
-    this->AimModeBuffer.writeOver();
+    *(this->aim_mode_buffer_.Back) = robotMode;
+    this->aim_mode_buffer_.writeOver();
+    *(this->aim_mode_buffer_.Back) = robotMode;
+    this->aim_mode_buffer_.writeOver();
 
-    *(this->EnemyColorBuffer.Back) = teamColor_red;
-    this->EnemyColorBuffer.writeOver();
-    *(this->EnemyColorBuffer.Back) = teamColor_red;
-    this->EnemyColorBuffer.writeOver();
-    sent_length = 12;
+    *(this->enemy_color_buffer_.Back) = teamColor_red;
+    this->enemy_color_buffer_.writeOver();
+    *(this->enemy_color_buffer_.Back) = teamColor_red;
+    this->enemy_color_buffer_.writeOver();
+    sent_length_ = 12;
     this->S_DATA[0] = 0xBB;
     this->S_DATA[1] = 0x01;
     this->S_DATA[11] = 0XFF;
 }
 void UartKeeper_Guard::boot(void)
 {
-    KeeperThread = std::thread(&UartKeeper_Guard::KeeperCycle,this);
+    keeper_thread_ = std::thread(&UartKeeper_Guard::KeeperCycle,this);
 }
-void UartKeeper_Guard::read(axisData* &AxisData,teamColor* &EnemyColor,aimMod* &AimMod)
+void UartKeeper_Guard::read(axisData* &AxisData,TeamColor* &EnemyColor,aimMod* &AimMod)
 {
     AxisData = nullptr;
-    EnemyColor = EnemyColorBuffer.read();
-    AimMod = AimModeBuffer.read();
+    EnemyColor = enemy_color_buffer_.read();
+    AimMod = aim_mode_buffer_.read();
 }
 void UartKeeper_Guard::write()
 {
-    this->Uart1->send_data(this->S_DATA,this->sent_length);
+    this->Uart1->send_data(this->S_DATA,this->sent_length_);
 }
 void UartKeeper_Guard::set(const void* data,data_label label)
 {
@@ -133,7 +133,7 @@ void UartKeeper_Guard::KeeperCycle()
     {
         if(Uart1->get_data())
         {
-            switch(Uart1->receiceData[2])
+            switch(Uart1->receice_data_[2])
             {
             /*
             case 0x01://普通自瞄申请
@@ -161,8 +161,8 @@ void UartKeeper_Guard::KeeperCycle()
                 break;
             */
             case 0x07://角色反馈
-                *(EnemyColorBuffer.Back) = Uart1->receiceData[3] == 0x00 ? teamColor_red : teamColor_blue;
-                EnemyColorBuffer.writeOver();
+                *(enemy_color_buffer_.Back) = Uart1->receice_data_[3] == 0x00 ? teamColor_red : teamColor_blue;
+                enemy_color_buffer_.writeOver();
                 break;
             default:return;
             }

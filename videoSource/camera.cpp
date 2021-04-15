@@ -1,10 +1,10 @@
 #include "camera.h"
 
-camera::camera()
+Camera::Camera()
 {
 
 }
-bool camera::cameraInit()
+bool Camera::cameraInit()
 {
     bool isSuccess;
     //0
@@ -57,7 +57,7 @@ bool camera::cameraInit()
 }
 
 
-bool camera::IGetFrame(cv::Mat &src)
+bool Camera::IGetFrame(cv::Mat &src)
 {
     CFrame frame;
     bool getFrameSuccess=streamPtr->getFrame(frame,300);
@@ -104,11 +104,11 @@ bool camera::IGetFrame(cv::Mat &src)
     int framewidth=frame.getImageWidth();
     int frameheight=frame.getImageHeight();
     cv::Mat image=cv::Mat(frameheight,framewidth,CV_8UC3,frameBGRPtr);
-    resize(image,src,ImageSize);
+    resize(image,src,image_size_);
     delete[] frameBGRPtr;
     return true;
 }
-void camera::setFrameRate(double rate)
+void Camera::setFrameRate(double rate)
 {
     bool bRet;
     IAcquisitionControlPtr sptAcquisitionControl = CSystem::getInstance().createAcquisitionControl(cameraSptr);
@@ -133,7 +133,7 @@ void camera::setFrameRate(double rate)
         return;
     }
 }
-void camera::SetExposeTime(double exp)
+void Camera::SetExposeTime(double exp)
 {
     bool bRet;
     IAcquisitionControlPtr sptrAcquisitionControl = CSystem::getInstance().createAcquisitionControl(cameraSptr);
@@ -168,7 +168,7 @@ void camera::SetExposeTime(double exp)
     }
     cout << "exposure success"<<endl;
 }
-void camera::setBalanceRatio(double dRedBalanceRatio, double dGreenBalanceRatio, double dBlueBalanceRatio)
+void Camera::setBalanceRatio(double dRedBalanceRatio, double dGreenBalanceRatio, double dBlueBalanceRatio)
 {
     bool bRet;
     IAnalogControlPtr sptrAnalogControl = CSystem::getInstance().createAnalogControl(cameraSptr);

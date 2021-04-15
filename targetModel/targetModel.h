@@ -1,20 +1,20 @@
 #ifndef TARGETMODEL_H
 #define TARGETMODEL_H
 
-#include "videoSource/videoSource.h"
+#include "videoSource/videosource.h"
 #include "serialPort/pmbcbspkeeper.h"
 #include "preferences.h"
 
-class targetModel
+class TargetModel
 {
 public:
-    targetModel();
+    TargetModel();
     virtual void amend(ImageData* imageData) = 0;//修正预测模型
     //virtual void amend(const axisData* AxisData) = 0;//修正预测模型
-    void setEnemyColor(teamColor EnemyColor);
+    void setEnemyColor(TeamColor enemy_color_);
     virtual cv::Point2f getFuturePosition(const float offset) = 0;//获得预测点
 protected:
-    teamColor EnemyColor;
+    TeamColor enemy_color_;
 };
 
 #endif // TARGETMODEL_H

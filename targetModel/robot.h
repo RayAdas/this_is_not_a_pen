@@ -6,7 +6,7 @@
 #include "targetModel.h"
 #include "coordinateTransform/coordinateTransform.h"
 #include "preferences.h"
-#include "videoSource/videoSource.h"
+#include "videoSource/videosource.h"
 using namespace std;
 using namespace cv;
 
@@ -109,11 +109,11 @@ public:
 
 };
 
-class armorModel:public targetModel
+class ArmorModel:public TargetModel
 {
 public:
 
-    armorModel(coordinatTransform*);
+    ArmorModel(CoordinatTransform*);
     void judgeArrmorState();    //判断图像处理roi区size
     ArmorFindFlag ArrmorDection();    //find装甲板主要函数
     void histMaker(Mat& src_hist);    //画出图像直方图
@@ -169,7 +169,7 @@ public:
     cv::Point2f getFuturePosition(const float offset) override;//获得预测点
 
 private:
-    coordinatTransform* pnpsolve;
+    CoordinatTransform* pnpsolve;
     Point2f GetArmorCenter();
     void setInputImage(Mat input);
     void Pretreatment();
