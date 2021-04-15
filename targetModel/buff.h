@@ -68,7 +68,8 @@ public:
     BuffModel();
     void amend(ImageData* imageData) override;//修正预测模型
     //void amend(const axisData* AxisData) override;//修正预测模型
-    cv::Point2f getFuturePosition(const float offset) override;//获得预测点
+    cv::Point3f getFuturePosition(const float offset) override;//获得预测点
+    cv::Point2f getCurrentDirection();
 private:
     CriticalCore criti_calcore_;
     CoordinatTransform *coordinat_transform_;

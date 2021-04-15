@@ -187,7 +187,7 @@ void ArmorModel::amend(ImageData* imageData)//修正预测模型
 
 
 }
-cv::Point2f ArmorModel::getFuturePosition(const float offset)//获得预测点
+cv::Point3f ArmorModel::getFuturePosition(const float offset)//获得预测点
 {
 //    cout <<this->GetArmorCenter() <<endl;
     return(this->GetArmorCenter());
@@ -316,8 +316,9 @@ bool CmpArrmor(ArmorDescriptor A1,ArmorDescriptor A2)
 }
 
 //对灯条处理完，开始对灯条进行匹配然后对装甲版做匹配
-Point2f ArmorModel::GetArmorCenter()
+Point3f ArmorModel::GetArmorCenter()
 {
+    cv::Point3f tvec(0,0,0);
     //将灯条从左往右排序
     sort(lightCountersRoRect.begin(),lightCountersRoRect.end(),CmpLight);            //lightCountersRoRect存储的是LightDescriptor形的数组
 
@@ -697,7 +698,7 @@ Point2f ArmorModel::GetArmorCenter()
                 {
                     if(targetArrmor.armorType==SMALL_ARMOR)
                     {
-                        pnpsolve->PNP(targetArrmorTemp.armorPoints,true,armorDistance,yaw,pitch);
+                        tvec = pnpsolve->PNP(targetArrmorTemp.armorPoints,true,armorDistance,yaw,pitch);
                         //cout << "距离：" <<armorDistance/1000 <<endl;
                         //cout << "yaw：" << yaw <<endl;
                         //cout << "pitch：" << pitch <<endl;
@@ -706,7 +707,7 @@ Point2f ArmorModel::GetArmorCenter()
                     else if(targetArrmor.armorType==BIG_ARMOR)
 
                     {
-                        pnpsolve->PNP(targetArrmorTemp.armorPoints,false,armorDistance,yaw,pitch);
+                        tvec = pnpsolve->PNP(targetArrmorTemp.armorPoints,false,armorDistance,yaw,pitch);
                         //cout << "距离：" <<armorDistance/1000 <<endl;
                         //cout << "yaw：" << yaw <<endl;
                         //cout << "pitch：" << pitch <<endl;
@@ -762,11 +763,12 @@ Point2f ArmorModel::GetArmorCenter()
 #endif
     if(targetArrmor.armorType != UNKNOWN_ARMOR)
     {
-        return targetArrmor.center;
+        //return targetArrmor.center;
+        return tvec;
     }
     else
     {
-        return Point(-1,-1);
+        return cv::Point3f(-1,-1,-1);
     }
 
 }

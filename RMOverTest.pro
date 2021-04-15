@@ -59,7 +59,7 @@ SOURCES += \
     serialPort/pmbcbspkeeper.cpp \
     trajectoryCalculation.cpp \
     videoSource/galaxycamera.cpp \
-    videoSource/videosource.cpp
+    videoSource/videosource.cpp \
 
 HEADERS += \
     serialPort/serialPort.h \
@@ -77,6 +77,6 @@ HEADERS += \
     trajectoryCalculation.h \
     videoSource/galaxycamera.h \
     preferences.h \
-    videoSource/videosource.h
+    videoSource/videosource.h \
 
 DISTFILES +=

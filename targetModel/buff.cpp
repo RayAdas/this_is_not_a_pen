@@ -376,20 +376,23 @@ void BuffModel::amend(ImageData* imageData)//修正预测模型
 BuffModel::BuffModel()
 {
 }
-cv::Point2f BuffModel::getFuturePosition(const float offset)//获得预测点
+cv::Point3f BuffModel::getFuturePosition(const float offset)//获得预测点
 {
-    cv::Point2f futurePosition;
+    cv::Point3f futurePosition;
     float angle = criti_calcore_.getFutureAngle(offset);
     if(angle < 0)
     {
-        return cv::Point2f(640,512);
+        return cv::Point3f(-1,-1,-1);
     }
-    futurePosition.x = this->last_buff_tick_.center.x + this->last_buff_tick_.radius * cos(angle);
-    futurePosition.y = this->last_buff_tick_.center.y - this->last_buff_tick_.radius * sin(angle);
-    float yangjiao = TrajectoryCalculation::getElevation(BUFF_CENTER_DISTANCE,BUFF_CENTER_HEIGHT + sin(angle) * BUFF_CENTER_RADIUS,25);
-    yangjiao -= atan(BUFF_CENTER_HEIGHT / BUFF_CENTER_DISTANCE);
-
-    futurePosition.y = last_buff_tick_.center.y - this->coordinat_transform_->f_ * tan(yangjiao) / this->coordinat_transform_->length_per_pixel_;
-    //cout<<futurePosition<<endl;
+    futurePosition.x = BUFF_CENTER_RADIUS * cos(angle);
+    futurePosition.y = BUFF_CENTER_RADIUS * sin(angle) + BUFF_CENTER_HEIGHT;
+    futurePosition.z = BUFF_CENTER_DISTANCE;
     return futurePosition;
+}
+cv::Point2f BuffModel::getCurrentDirection()
+{
+    cv::Point2f d;
+    d.x = atan(BUFF_CENTER_RADIUS * cos(last_buff_tick_.angle) / BUFF_CENTER_DISTANCE);
+    d.y = atan((BUFF_CENTER_RADIUS * sin(last_buff_tick_.angle) + BUFF_CENTER_HEIGHT) / BUFF_CENTER_DISTANCE);
+    return d;
 }

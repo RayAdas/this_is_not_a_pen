@@ -12,7 +12,7 @@ public:
     virtual void amend(ImageData* imageData) = 0;//修正预测模型
     //virtual void amend(const axisData* AxisData) = 0;//修正预测模型
     void setEnemyColor(TeamColor enemy_color_);
-    virtual cv::Point2f getFuturePosition(const float offset) = 0;//获得预测点
+    virtual cv::Point3f getFuturePosition(const float offset) = 0;//获得预测点
 protected:
     TeamColor enemy_color_;
 };

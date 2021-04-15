@@ -1,5 +1,7 @@
 #include "controller.h"
 
+float GetPitch(float x, float y, float v);
+float BulletModel(float x, float v, float angle);
 Controller::Controller(VideoSource *videoSource,CoordinatTransform *CameraTransformer,UartKeeper *uart1)
 {
     this->video_source_ = videoSource;
@@ -48,12 +50,13 @@ void Controller::mainCycle()
             const unsigned char lingyi = 0x01;
             const unsigned char lingling = 0x00;
 
-            cv::Point2f target;
+            cv::Point3f target;
+            cv::Point2f gimbal;
             uart1_keeper_->set(&lingyi,FirePermit);
             uart1_keeper_->set(&lingwu,AOrR);
             active_model_->amend(video_source_->getImage());
             target = active_model_->getFuturePosition(0);;
-            if(target.x == -1 ||target.y == -1)//没找到
+            if(target.x == -1 || target.y == -1 || target.z == -1)//没找到
             {
                 uart1_keeper_->set(&lingling,YunTaiMode);
                 uart1_keeper_->set(&lingling,FirePermit);
@@ -69,14 +72,17 @@ void Controller::mainCycle()
                 {
                     uart1_keeper_->set(&lingling,FirePermit);
                 }
-                target = camera_transformer_->PCoord2ICoord(target);//注意图像大小
-                target = camera_transformer_->ICoord2CCoord(target);
-                target.x = target.x * 180 / M_PI;
-                target.y = target.y * 180 / M_PI;
-                target.x = (-1) * target.x;
-                cout<<target.x<<"||"<<target.y<<endl;
-                uart1_keeper_->set(&target.x,YawAngle);
-                uart1_keeper_->set(&target.y,PitchAngle);
+                //target = camera_transformer_->PCoord2ICoord(target);//注意图像大小
+                //target = camera_transformer_->ICoord2CCoord(target);
+                gimbal.x = atan(target.x / target.z);
+                gimbal.y = atan(target.y / target.z) + GetPitch(target.z,target.y,15);
+
+                gimbal.x = gimbal.x * 180 / M_PI;
+                gimbal.y = gimbal.y * 180 / M_PI;
+                gimbal.x = (-1) * gimbal.x;
+                cout<<gimbal.x<<"||"<<gimbal.y<<endl;
+                uart1_keeper_->set(&gimbal.x,YawAngle);
+                uart1_keeper_->set(&gimbal.y,PitchAngle);
                 uart1_keeper_->write();
             }
 
@@ -85,4 +91,30 @@ void Controller::mainCycle()
         //cout<<"time:"<<tm.getTimeMilli()<<endl;
         tm.reset();
     }
+}
+
+float GetPitch(float x, float y, float v) {
+    float y_temp, y_actual, dy;
+    float a;
+    y_temp = y;
+    // by iteration
+    for (int i = 0; i < 20; i++) {
+        a = (float) atan2(y_temp, x);
+        y_actual = BulletModel(x, v, a);
+        dy = y - y_actual;
+        y_temp = y_temp + dy;
+        if (fabsf(dy) < 0.001) {
+            break;
+        }
+        //printf("iteration num %d: angle %f,temp target y:%f,err of y:%f\n",i+1,a*180/3.1415926535,yTemp,dy);
+    }
+    return a;
+
+}
+float BulletModel(float x, float v, float angle) { //x:m,v:m/s,angle:rad
+    float init_k_ = 1;
+    float t, y;
+    t = (float)((exp(init_k_ * x) - 1) / (init_k_ * v * cos(angle)));
+    y = (float)(v * sin(angle) * t - GRAVITY * t * t / 2);
+    return y;
 }

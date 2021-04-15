@@ -74,7 +74,7 @@ cv::Point3f CoordinatTransform::PNP(std::vector<cv::Point2f>&xy,bool SIZE,double
         //将弧度转化为角度
     yaw = yaw * (180 / PI);
     pitch = pitch * (180 / PI);
-
+    return cv::Point3f(X0,Y0,Z0);
 }
 
 
