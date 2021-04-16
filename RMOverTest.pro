@@ -5,14 +5,14 @@ CONFIG -= app_bundle
 CONFIG -= qt
 QMAKE_CXXFLAGS += -std=c++0x
 QMAKE_CXXFLAGS += -D_GLIBCXX_USE_CXX11_ABI=0
-LIBS += /usr/lib/libopencv_imgproc.so \
-        /usr/lib/libopencv_highgui.so \
-        /usr/lib/libopencv_core.so \
-        /usr/lib/libopencv_imgcodecs.so \
-        /usr/lib/libopencv_video.so \
-        /usr/lib/libopencv_videoio.so \
-        /usr/lib/libopencv_calib3d.so \
-        /usr/lib/libopencv_ml.so \
+LIBS += /usr/local/lib/libopencv_imgproc.so \
+        /usr/local/lib/libopencv_highgui.so \
+        /usr/local/lib/libopencv_core.so \
+        /usr/local/lib/libopencv_imgcodecs.so \
+        /usr/local/lib/libopencv_video.so \
+        /usr/local/lib/libopencv_videoio.so \
+        /usr/local/lib/libopencv_calib3d.so \
+        /usr/local/lib/libopencv_ml.so \
         #/usr/lib/aarch64-linux-gnu/libpthread.so \
         /usr/lib/x86_64-linux-gnu/libpthread.so \
 
@@ -60,6 +60,7 @@ SOURCES += \
     trajectoryCalculation.cpp \
     videoSource/galaxycamera.cpp \
     videoSource/videosource.cpp \
+
 
 HEADERS += \
     serialPort/serialPort.h \

@@ -1,6 +1,7 @@
 # Prerequisites
 *.d
 
+Makefile
 *.avi
 RMOverTest.pro.user.*
 

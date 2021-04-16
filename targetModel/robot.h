@@ -37,7 +37,18 @@ struct LightParam
     }
 };
 
-
+/*
+struct Message
+{
+    float pitch;
+    float yaw;
+    Message()
+    {
+        float pitch=0;
+        float yaw=0;
+    }
+};
+*/
 
 typedef enum _
 {
@@ -45,13 +56,6 @@ typedef enum _
     Lightright=1
 }sense_of_roRect;
 
-typedef enum __
-{
-    ARMOR_NO = 0,		// not found
-    ARMOR_LOST = 1,		// lose tracking
-    ARMOR_GLOBAL = 2,	// armor found globally
-    ARMOR_LOCAL = 3		// armor found locally(in tracking mode)
-}ArmorFindFlag;
 
 typedef enum ___
 {
@@ -98,13 +102,17 @@ public:
 
 
 public:
-    float              Longest;
-    float             Shortest;
-    float             lightLen;
+    float               Longest;
+    float              Shortest;
+    float              lightLen;
+    float                 pitch;
+    float                   yaw;
+    double             distance;
     Robot_Type            robot;
-    ObjectType       armorType;
-    sense_of_roRect armorsense;
+    ObjectType        armorType;
+    sense_of_roRect  armorsense;
     vector<Point2f> armorPoints;
+
 
 
 };
@@ -112,18 +120,13 @@ public:
 class ArmorModel:public TargetModel
 {
 public:
-
     ArmorModel(CoordinatTransform*);
-    void judgeArrmorState();    //判断图像处理roi区size
-    ArmorFindFlag ArrmorDection();    //find装甲板主要函数
-    void histMaker(Mat& src_hist);    //画出图像直方图
+
     void setImage(cv::Mat& set_src);    //预处理图像
 
-    void setDigtisRecognize(bool flag);    //开关装甲板数字识别
-    void judgeArmorrType(ArmorDescriptor &a);
-    void recrodArmorStatus(bool isFoundArmor);    //记录find装甲板结果
+    void judgeArmorrType(ArmorDescriptor &a,float arrmorHBW);
     void getLightLen(vector<Point2f> &lightPoint2fs,float &len);    //获取装甲板最长灯条长度
-    void getArmorImagePoint2f(ArmorDescriptor &armor, vector<Point2f> &point2fs);
+    void getArmorImagePoint2f(ArmorDescriptor &armor, Point2f Points[]);
 
 public:
 
@@ -132,32 +135,13 @@ public:
     cv::Mat distortionParam;
     float yaw=0,pitch=0;
     LightParam Light;                                //装甲板描述的结构体
-    Point2f offset_roi_point;
-    Size ImageSize;
-    Size roiImageSize;                               //找到的装甲板大小
-    cv::Mat src_roi;                                 //寻找装甲板的ROI大小
+    Point2f offset_point;
+    Size ImageSize;                                  //图片大小
+    cv::Mat src_roi;
     ArmorDescriptor targetArrmor;                    // 目标装甲板
-    cv::RotatedRect targetArrmor2FindRoi;
+//    ArmorDescriptor lastArrmor;
     vector<LightDescriptor> lightCountersRoRect;     // 筛选出来的单个灯条vector
     double armorDistance=0;
-
-private:
-    ArmorFindFlag _armorFindFlag;
-    int _trackCounter;      //记录在追踪模式下处理图片的张数，达到max_track_num后变为全局搜索模式
-    bool _isTracking;       //判断是否在追踪模式下
-    float widthRatio;
-    float heightRatio;
-    int losed_counter;                 // 目标装甲板丢失计数器
-    int find_counter;                  //目标装甲板找到计数器
-
-
-    //Ptr<ml::SVM> SVM_Params;           //svm数字识别模型
-    //Ptr<ml::SVM> SVM_ArmorTypeParam;   //装甲板类型svm模型
-    bool enableDigitsRecognize;
-
-    void mySvmPredict(Mat& src,int& armorNum)             ;
-    int mySvmArmorTypePredict(float ratio, float angle)   ;
-    void drawMaxConnect(Mat& out,Mat& labels,int maxLabel);
 
 
 
@@ -167,6 +151,8 @@ public:
     void amend(ImageData* imageData) override;//修正预测模型
     //virtual amend(陀螺仪数据) = 0;//修正预测模型
     cv::Point3f getFuturePosition(const float offset) override;//获得预测点
+
+
 
 private:
     CoordinatTransform* pnpsolve;

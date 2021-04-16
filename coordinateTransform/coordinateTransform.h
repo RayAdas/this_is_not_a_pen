@@ -28,6 +28,24 @@ public:
     const float f_;// = 6.308e-03;
 
 
+    float BulletModel(float x,float v,float angle);
+    /**
+     * @brief Get the gimbal control angle
+     * @param x Distance from enemy(the armor selected to shoot) to gimbal
+     * @param y Value of y in gimbal coordinate.
+     * @param v Projectile velocity
+     * @return Gimbal pitch angle
+     */
+    float GetPitch(float x,float y,float v);
+    void Init(float x,float y,float z,float pitch,float yaw, float init_v, float init_k);
+    /**
+     * @brief Get the gimbal control info.
+     * @param postion Enemy position(actually it should be the target armor).
+     * @param pitch Input and output actual pitch angle
+     * @param yaw Input and output actual yaw angle
+     */
+    void Transform(cv::Point3f &postion,float &yaw,float &pitch,float v);
+
 private:
     std::vector<cv::Point3f>small_armor_point3f_;
     std::vector<cv::Point3f>big_armor_point3f_;

@@ -2,10 +2,12 @@
 #include"coordinateTransform/coordinateTransform.h"
 #include <math.h>
 
-//armorModel::armorModel() = default;//这玩意是干嘛的？
-//#define VISUAL_ROBOT
-//#define DRAW_PICTURE
-//#define SHOW_DATA
+#define VISUAL_ROBOT
+#define DRAW_PICTURE
+//#define SHOW_PNP_DATA
+//#define SHOW_SELECTED_DATA
+//#define SHOW_RETURN_DATA
+
 LightDescriptor::LightDescriptor()
 {
     this->center.x=0;//初始化0,0点
@@ -70,16 +72,7 @@ cv::RotatedRect LightDescriptor::rotatedrect()
     return ro;
 }
 
-/**
-  *用line画框
-*/
-void drawRotatedangle(Mat& src,Point2f p[],Scalar Color[],int thickness)
-{
-    line(src,p[3],p[0],Color[0],thickness);//蓝
-    line(src,p[0],p[1],Color[1],thickness);//绿
-    line(src,p[1],p[2],Color[2],thickness);//红
-    line(src,p[2],p[3],Color[3],thickness);
-}
+
 
 
 /**
@@ -99,7 +92,11 @@ ArmorDescriptor::ArmorDescriptor()
     this->armorsense= Lightleft    ;
 
     this->size=Size2f(0,0)         ;
-    this->armorPoints.resize(4);
+    this->armorPoints.resize(4)    ;
+    this->pitch=0;;
+    this->yaw=0;
+    this->distance=0;
+
 }
 
 ArmorDescriptor:: ArmorDescriptor(const RotatedRect& another,ObjectType type,Robot_Type ro)
@@ -159,18 +156,9 @@ void ArmorDescriptor::setRobotType(Robot_Type set)
 ArmorModel::ArmorModel(CoordinatTransform *a)
 {
     pnpsolve = a;
-
-    losed_counter=0;
-    find_counter=0;
-    _armorFindFlag=ARMOR_NO;
-    roiImageSize=Size(0,0);
-
-    _trackCounter=0;
-    _isTracking=false;
-    widthRatio=4;
-    heightRatio=4;
-    enableDigitsRecognize=false;
-
+    ImageSize =Size(640,512);
+    offset_point.x = 0;
+    offset_point.y = 0;
 }
 void ArmorModel::setInputImage(Mat input) {
     frame = input.clone();
@@ -189,8 +177,11 @@ void ArmorModel::amend(ImageData* imageData)//修正预测模型
 }
 cv::Point3f ArmorModel::getFuturePosition(const float offset)//获得预测点
 {
-//    cout <<this->GetArmorCenter() <<endl;
+    #ifdef  SHOW_RETURN_DATA
+    cout <<this->GetArmorCenter() <<endl;
+    #endif
     return(this->GetArmorCenter());
+
 }
 
 
@@ -208,7 +199,6 @@ void ArmorModel::Pretreatment() {
     std::vector<cv::Mat> srcColorChannels;
     cv::split(frame,srcColorChannels);//分离src三通道
     //B,G,R
-
     if(enemy_color_)        //red，！blue
     {
         cv::subtract(srcColorChannels[0],srcColorChannels[2],mask);//通道相减
@@ -379,14 +369,7 @@ Point3f ArmorModel::GetArmorCenter()
             float lightside_max = leftlight_height > rightlight_height ? leftlight_height:rightlight_height;
             float lightCenterDistance = Distance(lightCountersRoRect[i].center,lightCountersRoRect[j].center);
             float DBH = lightCenterDistance/lightside_max;
-            /*
-            bool rectCenterLenFlagShort = DBH > Light.DBH_min ? false:true;//**************************************************************
-            bool rectCenterLenFlagLong = DBH < Light.DBH_max ? false:true;
-            if(rectCenterLenFlagShort || rectCenterLenFlagLong)
-            {
-                continue;
-            }
-            */
+
             bool rectCenterLenFlagShort = DBH > Light.DBH_min ? true:false;
             bool rectCenterLenFlagLong = DBH < Light.DBH_max ? true:false;
             if(rectCenterLenFlagShort==false || rectCenterLenFlagLong==false)
@@ -396,13 +379,7 @@ Point3f ArmorModel::GetArmorCenter()
 
 
             //两灯条的形状差别  *************************************************************************
-/*
-            bool rectLenFlag=fabs(leftlight_height-rightlight_height)<(lightside_max/Light.height_difference_ratio) ? false:true;
-            if(rectLenFlag)
-            {
-                continue;
-            }
-*/
+
             bool rectLenFlag=fabs(leftlight_height-rightlight_height) < (lightside_max / Light.height_difference_ratio) ? true:false;
             if(rectLenFlag==false)
             {
@@ -538,22 +515,27 @@ Point3f ArmorModel::GetArmorCenter()
                 armorHeight=arrmorTemp.size.height;
                 targetArrmorTemp.size.width=targetArrmorTemp.size.width*2;
             }
-            float arrmorHBW=armorHeight/armorWidth    ;
-            bool arrmor_LenFlag1=armorWidth < 2 ? true:false           ;
-            bool arrmor_LenFlag2=arrmorHBW > 5.3 ? true:false      ;
-            bool arrmor_LenFlag3=arrmorHBW < 1.5 ? true:false      ;
+            float arrmorHBW=armorHeight/armorWidth                 ;
+            bool arrmor_LenFlag1=armorWidth < 2 ? true:false       ;
+            bool arrmor_LenFlag2=arrmorHBW > 5.0 ? true:false      ;
+            bool arrmor_LenFlag3=arrmorHBW < 1.8 ? true:false      ;
             if((arrmor_LenFlag1 == true || arrmor_LenFlag2 == true)||arrmor_LenFlag3 == true)
             {
                 continue;
             }
-            judgeArmorrType(targetArrmorTemp);
+#ifdef SHOW_SELECTED_DATA
+            cout << arrmorHBW <<endl;
+
+#endif
+            judgeArmorrType(targetArrmorTemp,arrmorHBW);
+            cout << targetArrmorTemp.armorType<<endl;
 
             float length=0;
             getLightLen(PointArrmorTemp,length);
             targetArrmorTemp.lightLen=length;
             //cout << targetArrmorTemp.center <<endl;
-            targetArrmorTemp.armorPoints = PointArrmorTemp;
-            arrrmor_vector.emplace_back(targetArrmorTemp);
+            targetArrmorTemp.armorPoints = PointArrmorTemp ;
+            arrrmor_vector.emplace_back(targetArrmorTemp) ;
 
         }
 
@@ -561,252 +543,205 @@ Point3f ArmorModel::GetArmorCenter()
     //装甲版寻找结束
 
     //开始进行装甲版到筛选
-    ArmorDescriptor targetArrmorTemp;
+//    ArmorDescriptor targetArrmorTemp;
     //
-    vector<ArmorDescriptor> digtisArmorTemp;
-
-    digtisArmorTemp.clear();
     if(!arrrmor_vector.empty())   //如果存储装甲板的容器不是空的
     {
-        digtisArmorTemp=arrrmor_vector;
 
-        if(!digtisArmorTemp.empty())       //如果digtisArmorTemp这个数组里面不为空
+
+        sort(arrrmor_vector.begin(),arrrmor_vector.end(),CmpArrmor);
+
+
+        //滤掉反光装甲板的影响
+        if(arrrmor_vector.size()>1)
         {
-            //将装甲板按照中心坐标x 从小到大排序
-            sort(digtisArmorTemp.begin(),digtisArmorTemp.end(),CmpArrmor);
 
-
-
-            //滤掉反光装甲板的影响
-            if(digtisArmorTemp.size()>1)
+            for(size_t i=1;i<arrrmor_vector.size();i++)
             {
 
-                for(size_t i=1;i<digtisArmorTemp.size();i++)
+                if((arrrmor_vector[i].center.x-arrrmor_vector[i-1].center.x)<(arrrmor_vector[i-1].Longest/2))
                 {
-
-                    if((digtisArmorTemp[i].center.x-digtisArmorTemp[i-1].center.x)<(digtisArmorTemp[i-1].Longest/2))
+                    if(arrrmor_vector[i].center.y < arrrmor_vector[i-1].center.y)// y小的是真的y大的是反光的
                     {
-                        if(digtisArmorTemp[i].center.y<digtisArmorTemp[i-1].center.y)// y小的是真的y大的是反光的
-                        {
-                            digtisArmorTemp[i-1]=digtisArmorTemp[i];
+                        arrrmor_vector[i-1]=arrrmor_vector[i];   //i是真
+                        arrrmor_vector[i-1].armorPoints = arrrmor_vector[i].armorPoints;
+
+                    }
+                    else
+                    {
+                        arrrmor_vector[i]=arrrmor_vector[i-1];   //i-1是真
+                        arrrmor_vector[i].armorPoints = arrrmor_vector[i-1].armorPoints;
 
 
-                        }
-                        else
-                        {
-                            digtisArmorTemp[i]=digtisArmorTemp[i-1];
-
-
-                        }
                     }
                 }
-
             }
-
-            //只是单纯的从装甲板与图像中心距离的关系找出最合适的装甲板
-            //后面筛选出目标装甲板的代码还需要优化
-            int mask=0;
-//            targetArrmorTemp=digtisArmorTemp[mask];
-//            targetArrmorTemp.judgeArmorrType();
-//            int digtis=ArmorNum[0];
-
-
-            float targetArrmorDistanceTemp=0;
-            Point2f srcCenter(ImageSize.width/2,ImageSize.height/2);
-            Point2f targetArrmorCenterTemp(digtisArmorTemp[mask].center.x+offset_roi_point.x,
-                                           digtisArmorTemp[mask].center.y+offset_roi_point.y);
-            targetArrmorDistanceTemp=Distance(targetArrmorCenterTemp,srcCenter);
-
-
-
-            for(size_t i=1;i<digtisArmorTemp.size();i++)
-            {
-                Point2f arrmorCenterTemp(digtisArmorTemp[i].center.x+offset_roi_point.x,
-                                         digtisArmorTemp[i].center.y+offset_roi_point.y);
-                float arrmorDistanceTemp=Distance(arrmorCenterTemp,srcCenter);
-
-
-                //与摄像头中心距离
-                if((targetArrmorDistanceTemp-arrmorDistanceTemp)>=0)
-                {
-                    mask=i;
-                    targetArrmorDistanceTemp=arrmorDistanceTemp;
-                }
-
-                //画出找到的装甲板
-                Point2f allArmorPoints[4];
-#ifdef DRAW_PICTURE
-                Scalar allArmorPointsColor[4]={Scalar(255,0,0),Scalar(0,255,0),Scalar(0,0,255),Scalar(255,0,255)};
-                digtisArmorTemp[i].points(allArmorPoints);
-                //drawRotatedangle(src_roi,allArmorPoints,allArmorPointsColor,2);
-#endif
-            }
-
-            targetArrmorTemp=digtisArmorTemp[mask];
-            targetArrmorTemp.armorPoints = digtisArmorTemp[mask].armorPoints;
-
-
-
-
-
-
-            Point2f targetArrmorPoint[4];
-
-            targetArrmorTemp.points(targetArrmorPoint);
-
-#ifdef DRAW_PICTURE
-            //画出目标装甲板
-
-           // Scalar targetArmorColor[4]={Scalar(255,0,0),Scalar(0,255,0),Scalar(0,0,255),Scalar(255,0,255)};//彩色
-            Scalar targetArmorColor[4]={Scalar(255,0,0),Scalar(255,0,0),Scalar(255,0,0),Scalar(255,0,0)};
-            drawRotatedangle(src_roi,targetArrmorPoint,targetArmorColor,2);
-
-#endif
-            targetArrmor=targetArrmorTemp;// 存储目标装甲板
-
-
-            recrodArmorStatus(true);      //记录装甲板状态
-
-
-            Point2f targetArrmorPointTest[4];
-            if(targetArrmorTemp.armorsense  == Lightright)
-            {
-                targetArrmorPointTest[0] = targetArrmorTemp.armorPoints[0];
-                targetArrmorPointTest[1] = targetArrmorTemp.armorPoints[1];
-                targetArrmorPointTest[2] = targetArrmorTemp.armorPoints[2];
-                targetArrmorPointTest[3] = targetArrmorTemp.armorPoints[3];
-            }
-            else
-            {
-                targetArrmorPointTest[0] = targetArrmorTemp.armorPoints[3];
-                targetArrmorPointTest[1] = targetArrmorTemp.armorPoints[0];
-                targetArrmorPointTest[2] = targetArrmorTemp.armorPoints[1];
-                targetArrmorPointTest[3] = targetArrmorTemp.armorPoints[2];
-
-            }
-            for (int l = 0; l < 4; l++)
-            {
-                line(src_roi, targetArrmorPointTest[l], targetArrmorPointTest[(l + 1) % 4], Scalar(255, 0, 0), 2);
-
-            }
-
-            armorDistance=0;
-            yaw=0,pitch=0;
-            if(targetArrmor.armorType!=UNKNOWN_ARMOR)
-            {
-                if(1)   //pnp开关
-                {
-                    if(targetArrmor.armorType==SMALL_ARMOR)
-                    {
-                        tvec = pnpsolve->PNP(targetArrmorTemp.armorPoints,true,armorDistance,yaw,pitch);
-                        //cout << "距离：" <<armorDistance/1000 <<endl;
-                        //cout << "yaw：" << yaw <<endl;
-                        //cout << "pitch：" << pitch <<endl;
-                        //cout << endl;
-                    }
-                    else if(targetArrmor.armorType==BIG_ARMOR)
-
-                    {
-                        tvec = pnpsolve->PNP(targetArrmorTemp.armorPoints,false,armorDistance,yaw,pitch);
-                        //cout << "距离：" <<armorDistance/1000 <<endl;
-                        //cout << "yaw：" << yaw <<endl;
-                        //cout << "pitch：" << pitch <<endl;
-                        //cout << endl;
-                    }
-#ifdef SHOW_DATA
-                    cout << armorDistance/1000.0 <<endl;
-                    cout << "yaw:" << yaw <<endl;
-                    cout << "pitch:"<< pitch <<endl;
-                    cout << endl;
-#endif
-                }
-            }
-
-
 
         }
-        else  //没有找到装甲板
+
+        //只是单纯的从装甲板与图像中心距离的关系找出最合适的装甲板
+        //后面筛选出目标装甲板的代码还需要优化
+        int mask=0;
+        float targetArrmorDistanceTemp=0;
+
+
+        Point2f srcCenter(ImageSize.width/2,ImageSize.height/2);
+        Point2f targetArrmorCenterTemp(arrrmor_vector[mask].center.x+offset_point.x,
+                                       arrrmor_vector[mask].center.y+offset_point.y);
+        targetArrmorDistanceTemp=Distance(targetArrmorCenterTemp,srcCenter);
+
+
+
+        for(size_t i=1;i<arrrmor_vector.size();i++)
         {
-            recrodArmorStatus(false);     //记录当前装甲板状态
-            targetArrmor.armorType=UNKNOWN_ARMOR;
+            Point2f arrmorCenterTemp(arrrmor_vector[i].center.x+offset_point.x,arrrmor_vector[i].center.y+offset_point.y);
+            float arrmorDistanceTemp=Distance(arrmorCenterTemp,srcCenter);
+
+
+            //与摄像头中心距离
+            if((targetArrmorDistanceTemp-arrmorDistanceTemp)>=0)
+            {
+                mask=i;
+                targetArrmorDistanceTemp=arrmorDistanceTemp;
+            }
+
         }
-    }
-    else  //没有找到装甲板
-    {
-        recrodArmorStatus(false);
-        targetArrmor.armorType=UNKNOWN_ARMOR;
-    }
+
+        targetArrmor=arrrmor_vector[mask];
+
+
+
+        targetArrmor.armorPoints = arrrmor_vector[mask].armorPoints;
+
+
+
+
+
+
+        Point2f targetArrmorPoints[4];
+
+        Point2f targetArrmorPoints_Rectangle[4];
+        targetArrmor.points(targetArrmorPoints_Rectangle);
+
+        getArmorImagePoint2f(targetArrmor,targetArrmorPoints);
+
+
 
 
 #ifdef DRAW_PICTURE
-    for(int i =0;i<arrrmor_vector.size();i++)
-    {
-        Point2f  vertex[4];
-        arrrmor_vector[i].points(vertex);
+
 
         for (int l = 0; l < 4; l++)
         {
-            line(frame, vertex[l], vertex[(l + 1) % 4], Scalar(255, 0, 0), 2);
+            //画四个点图形
+            line(frame, targetArrmorPoints[l], targetArrmorPoints[(l + 1) % 4], Scalar(0, 0, 255), 2);
+
+            //画旋转矩形
+            line(src_roi, targetArrmorPoints_Rectangle[l], targetArrmorPoints_Rectangle[(l + 1) % 4], Scalar(0, 0, 255), 2);
+
+
 
         }
 
+        //画旋转矩形
+
+#endif
+
+        armorDistance=0;
+        yaw=0,pitch=0;
+
+        if(targetArrmor.armorType!=UNKNOWN_ARMOR)
+        {
+            if(1)   //pnp开关
+            {
+                if(targetArrmor.armorType==SMALL_ARMOR)
+                {
+                    pnpsolve->PNP(targetArrmor.armorPoints,true,armorDistance,yaw,pitch);
+
+                }
+                else if(targetArrmor.armorType==BIG_ARMOR)
+
+                {
+                    pnpsolve->PNP(targetArrmor.armorPoints,false,armorDistance,yaw,pitch);
+
+                }
+                targetArrmor.pitch=pitch;
+                targetArrmor.yaw  =yaw;
+                targetArrmor.distance = armorDistance;
+
+                #ifdef SHOW_PNP_DATA
+                cout << "距离：" <<armorDistance/1000 <<endl;
+                cout << "yaw：" << yaw <<endl;
+                cout << "pitch：" << pitch <<endl;
+                cout << endl;
+                #endif
+
+            }
+        }
 
     }
-#endif
+    else  //没有找到装甲板
+    {
+
+        targetArrmor.armorType=UNKNOWN_ARMOR;
+
+    }
 
 
-#ifdef VISUAL_ROBOT
 
-    imshow("src_roi",src_roi);
-    imshow("dst",frame);
+
+    #ifdef VISUAL_ROBOT
+    imshow("旋转矩形目标装甲版",src_roi);
+    imshow("原始目标装甲版",frame);
     waitKey(1);
-#endif
+    #endif
+
     if(targetArrmor.armorType != UNKNOWN_ARMOR)
     {
-        //return targetArrmor.center;
-        return tvec;
+        //return Point2f(targetArrmor.yaw,targetArrmor.pitch);
     }
     else
     {
-        return cv::Point3f(-1,-1,-1);
+        //return Point2f(-1,-1);
     }
+
 
 }
 
+void ArmorModel::getArmorImagePoint2f(ArmorDescriptor &armor, Point2f Points[])
+{
+    if(armor.armorsense  == Lightright)
+    {
+        Points[0] = armor.armorPoints[0];
+        Points[1] = armor.armorPoints[1];
+        Points[2] = armor.armorPoints[2];
+        Points[3] = armor.armorPoints[3];
+    }
+    else
+    {
+        Points[0] = armor.armorPoints[3];
+        Points[1] = armor.armorPoints[0];
+        Points[2] = armor.armorPoints[1];
+        Points[3] = armor.armorPoints[2];
+    }
+}
 
-void ArmorModel::judgeArmorrType(ArmorDescriptor &a)
+
+
+void ArmorModel::judgeArmorrType(ArmorDescriptor &a,float arrmorHBW)
 {
 
-    if(0)
+    if(arrmorHBW >=1.6 && arrmorHBW <= 3)
     {
         a.setArmorrType(SMALL_ARMOR);
     }
-    else
+    else if(arrmorHBW >=3.5 && arrmorHBW <= 5)
     {
         a.setArmorrType(BIG_ARMOR)  ;
     }
-}
-
-
-void ArmorModel::getArmorImagePoint2f(ArmorDescriptor &armor, vector<Point2f> &point2fs)
-{
-    Point2f armorPoints[4];
-    armor.points(armorPoints);
-
-    if(armor.armorsense==Lightleft)        //装甲板左偏
+    else
     {
-        point2fs.emplace_back(armorPoints[1]);
-        point2fs.emplace_back(armorPoints[2]);
-        point2fs.emplace_back(armorPoints[3]);
-        point2fs.emplace_back(armorPoints[0]);
-
-    }
-    else                                   //装甲板右偏
-    {
-        point2fs.emplace_back(armorPoints[0]);
-        point2fs.emplace_back(armorPoints[1]);
-        point2fs.emplace_back(armorPoints[2]);
-        point2fs.emplace_back(armorPoints[3]);
+        a.setArmorrType(UNKNOWN_ARMOR)  ;
     }
 }
 
@@ -830,49 +765,5 @@ double ArmorModel::Distance(Point2f a, Point2f b)
  }
 
 
- void ArmorModel::recrodArmorStatus(bool isFoundArmor)
- {
-     if(isFoundArmor)
-     {
-         _trackCounter++;
-         if(_trackCounter==3000)//每3000帧执行一次全局扫描
-         {
-             _trackCounter=0;
-             _armorFindFlag=ARMOR_GLOBAL;
-         }
-
-         switch(_armorFindFlag)//通过装甲板的状态确定用何种方式寻找装甲板
-         {
-             case ARMOR_LOST://上一帧是丢失状态下继续在最近找到装甲板的位置找装甲板
-             {
-                 _armorFindFlag=ARMOR_LOCAL;
-                 break;
-             }
-             case ARMOR_NO://上一帧是没有找到装甲板的状态下，在全图中寻找装甲板
-             {
-                 _armorFindFlag=ARMOR_GLOBAL;
-
-                 break;
-             }
-             default :
-             {
-
-                 break;
-             }
-         }
-     }
-     else
-     {
-         if(_armorFindFlag==ARMOR_LOCAL)//上一帧是局部寻找，则标记为丢失状态
-         {
-             _armorFindFlag=ARMOR_LOST;
-         }
-         else if(_armorFindFlag==ARMOR_GLOBAL)//上一帧是全局寻找，则标记为没有找到装甲板的状态状态
-         {
-
-             _armorFindFlag=ARMOR_NO;
-         }
-     }
- }
 
 
