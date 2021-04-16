@@ -3,16 +3,16 @@
 #include <functional>
 
 template<typename T>
-class tripleBuffering
+class TripleBuffering
 {
 public:
-    tripleBuffering()
+    TripleBuffering()
     {
         Front = new T;
         Middle = new T;
         Back = new T;
     }
-    ~tripleBuffering()
+    ~TripleBuffering()
     {
         delete Front;
         delete Middle;

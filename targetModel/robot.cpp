@@ -2,13 +2,11 @@
 #include"coordinateTransform/coordinateTransform.h"
 #include <math.h>
 
-
 #define VISUAL_ROBOT
 #define DRAW_PICTURE
 //#define SHOW_PNP_DATA
 //#define SHOW_SELECTED_DATA
 //#define SHOW_RETURN_DATA
-
 
 LightDescriptor::LightDescriptor()
 {
@@ -155,22 +153,21 @@ void ArmorDescriptor::setRobotType(Robot_Type set)
 }
 
 
-armorModel::armorModel(coordinatTransform *a)
+ArmorModel::ArmorModel(CoordinatTransform *a)
 {
     pnpsolve = a;
     ImageSize =Size(640,512);
     offset_point.x = 0;
     offset_point.y = 0;
     EnemyColor=true;
-
 }
-void armorModel::setInputImage(Mat input) {
+void ArmorModel::setInputImage(Mat input) {
     frame = input.clone();
     src_roi = input.clone();
     mask = input.clone();
 
 }
-void armorModel::amend(ImageData* imageData)//修正预测模型
+void ArmorModel::amend(ImageData* imageData)//修正预测模型
 {
 
     this->setInputImage(imageData->SrcImage);
@@ -179,7 +176,7 @@ void armorModel::amend(ImageData* imageData)//修正预测模型
 
 
 }
-cv::Point2f armorModel::getFuturePosition(const float offset)//获得预测点
+cv::Point3f ArmorModel::getFuturePosition(const float offset)//获得预测点
 {
     #ifdef  SHOW_RETURN_DATA
     cout <<this->GetArmorCenter() <<endl;
@@ -189,7 +186,7 @@ cv::Point2f armorModel::getFuturePosition(const float offset)//获得预测点
 }
 
 
-void armorModel::Pretreatment() {
+void ArmorModel::Pretreatment() {
 
     Mat input;
     Point p, center;
@@ -203,8 +200,7 @@ void armorModel::Pretreatment() {
     std::vector<cv::Mat> srcColorChannels;
     cv::split(frame,srcColorChannels);//分离src三通道
     //B,G,R
-
-    if( EnemyColor == true)        //blue,!red
+    if(enemy_color_)        //red，！blue
     {
         cv::subtract(srcColorChannels[0],srcColorChannels[2],mask);//通道相减
         cv::threshold(mask,mask,40,255,cv::THRESH_BINARY);//通道相减的灰度图进行二值化
@@ -311,8 +307,9 @@ bool CmpArrmor(ArmorDescriptor A1,ArmorDescriptor A2)
 }
 
 //对灯条处理完，开始对灯条进行匹配然后对装甲版做匹配
-Point2f armorModel::GetArmorCenter()
+Point3f ArmorModel::GetArmorCenter()
 {
+    cv::Point3f tvec(0,0,0);
     //将灯条从左往右排序
     sort(lightCountersRoRect.begin(),lightCountersRoRect.end(),CmpLight);            //lightCountersRoRect存储的是LightDescriptor形的数组
 
@@ -727,27 +724,10 @@ void armorModel::getArmorImagePoint2f(ArmorDescriptor &armor, Point2f Points[])
         Points[1] = armor.armorPoints[0];
         Points[2] = armor.armorPoints[1];
         Points[3] = armor.armorPoints[2];
-
     }
 }
 
-/*
-void armorModel::RecordImageLost()
-{
-    if(losed_counter==20)
-    {
-        losed_counter=0;
-        lastArrmor.armorType = UNKNOWN_ARMOR;
 
-    }
-    else
-    {
-        losed_counter++;
-        arrmorfindflag = true;
-
-    }
-}
-*/
 
 void armorModel::judgeArmorrType(ArmorDescriptor &a,float arrmorHBW)
 {
@@ -766,9 +746,6 @@ void armorModel::judgeArmorrType(ArmorDescriptor &a,float arrmorHBW)
     }
 }
 
-
-
-
 double armorModel::Distance(Point2f a, Point2f b)
 {
     return sqrt((a.x - b.x) * (a.x - b.x) +
@@ -779,7 +756,7 @@ double armorModel::Distance(Point2f a, Point2f b)
  ** 得到装甲板的灯条长度，用于计算距离
  **/
 
- void  armorModel::getLightLen(vector<Point2f> &lightPoint2fs, float &len)
+ void  ArmorModel::getLightLen(vector<Point2f> &lightPoint2fs, float &len)
  {
      float leftLength =Distance(lightPoint2fs[0],lightPoint2fs[1]);
 
@@ -787,6 +764,7 @@ double armorModel::Distance(Point2f a, Point2f b)
 
      len=leftLength > rightlength ? leftLength : rightlength;
  }
+
 
 
 

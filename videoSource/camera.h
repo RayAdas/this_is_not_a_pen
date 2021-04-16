@@ -14,10 +14,10 @@ using namespace Dahua::Infra;
 using namespace Dahua::Memory;
 using namespace std;
 
-class camera
+class Camera
 {
 public:
-    camera();
+    Camera();
     bool cameraInit();
     bool IGetFrame(cv::Mat& src);//获取一帧图像
     void setFrameRate(double rate = 210);//设置帧率
@@ -26,7 +26,7 @@ public:
 public:
     ICameraPtr cameraSptr;                   // 相机指针对象
 private:
-    cv::Size2i ImageSize = cv::Size(640,512);//图像大小
+    cv::Size2i image_size_ = cv::Size(640,512);//图像大小
     TVector<ICameraPtr> ICameraPtrVector;     // 相机指针列表对象
     IStreamSourcePtr streamPtr;               //流数据对象
 

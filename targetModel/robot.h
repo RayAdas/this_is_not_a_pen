@@ -6,7 +6,7 @@
 #include "targetModel.h"
 #include "coordinateTransform/coordinateTransform.h"
 #include "preferences.h"
-#include "videoSource/videoSource.h"
+#include "videoSource/videosource.h"
 using namespace std;
 using namespace cv;
 
@@ -117,11 +117,11 @@ public:
 
 };
 
-class armorModel:public targetModel
+class ArmorModel:public TargetModel
 {
 public:
-
     armorModel(coordinatTransform*);
+
     void setImage(cv::Mat& set_src);    //预处理图像
 
     void judgeArmorrType(ArmorDescriptor &a,float arrmorHBW);
@@ -134,7 +134,6 @@ public:
     cv::Mat cameraInternalParam;
     cv::Mat distortionParam;
     float yaw=0,pitch=0;
-    bool EnemyColor ;                                //检测的装甲板颜色
     LightParam Light;                                //装甲板描述的结构体
     Point2f offset_point;
     Size ImageSize;                                  //图片大小
@@ -151,13 +150,13 @@ public:
     //explicit armorModel(Mat& input);
     void amend(ImageData* imageData) override;//修正预测模型
     //virtual amend(陀螺仪数据) = 0;//修正预测模型
-    cv::Point2f getFuturePosition(const float offset) override;//获得预测点
+    cv::Point3f getFuturePosition(const float offset) override;//获得预测点
 
 
 
 private:
-    coordinatTransform* pnpsolve;
-    Point2f GetArmorCenter();
+    CoordinatTransform* pnpsolve;
+    Point3f GetArmorCenter();
     void setInputImage(Mat input);
     void Pretreatment();
 

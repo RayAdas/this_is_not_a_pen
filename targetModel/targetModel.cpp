@@ -1,10 +1,10 @@
 #include "targetModel.h"
 
-targetModel::targetModel()
+TargetModel::TargetModel()
 {
 
 }
-void targetModel::setEnemyColor(teamColor EnemyColor)
+void TargetModel::setEnemyColor(TeamColor EnemyColor)
 {
-    this->EnemyColor = EnemyColor;
+    this->enemy_color_ = EnemyColor;
 }

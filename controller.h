@@ -1,31 +1,31 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 
-#include "videoSource/videoSource.h"
+#include "videoSource/videosource.h"
 #include "serialPort/pmbcbspkeeper.h"
 #include "coordinateTransform/coordinateTransform.h"
 #include "targetModel/buff.h"
 #include "targetModel/robot.h"
 
-class controller
+class Controller
 {
 public:
-    controller(videoSource *,coordinatTransform *,UartKeeper *);
+    Controller(VideoSource *,CoordinatTransform *,UartKeeper *);
     void mainCycle();
     void boot();
 public:
 
 private:
-    videoSource *VideoSource = nullptr;
-    coordinatTransform *CameraTransformer = nullptr;
-    UartKeeper *Uart1Keeper = nullptr;
-    targetModel *BuffModel = nullptr;
-    targetModel *ArmorModel = nullptr;
-    targetModel *ActiveModel = nullptr;
+    VideoSource *video_source_ = nullptr;
+    CoordinatTransform *camera_transformer_ = nullptr;
+    UartKeeper *uart1_keeper_ = nullptr;
+    TargetModel *buff_model_ = nullptr;
+    TargetModel *armor_model_ = nullptr;
+    TargetModel *active_model_ = nullptr;
 
-    axisData* AxisData = nullptr;
-    teamColor* EnemyColor = nullptr;
-    aimMod* AimMod = nullptr;
+    axisData* axis_data_ = nullptr;
+    TeamColor* enemy_color_ = nullptr;
+    aimMod* aim_mode_ = nullptr;
 private:
     void explain(void);
 

@@ -1,56 +1,57 @@
  #include "coordinateTransform.h"
 
-coordinatTransform::coordinatTransform(cv::Mat cameraInternalParam,
+CoordinatTransform::CoordinatTransform(cv::Mat cameraInternalParam,
                    cv::Mat distortionParam,
                    cv::Size2f smallArmor,
-                   cv::Size2f bigArmor):F(6.308e-03),length_per_pixel(4.8e-6)
+                   cv::Size2f bigArmor):f_(6.308e-03),length_per_pixel_(4.8e-6)
 {
-    this->cameraInternalParam = cameraInternalParam;
-    this->distortionParam = distortionParam;
+    this->camera_internal_param_ = cameraInternalParam;
+    this->distortion_param_ = distortionParam;
 
     float smallArmorHalfWidth = 70.5;
     float smallArmorHalfHeight = 26;
     cv::Point3f worldPoints;
 
-    smallArmorPoint3f.clear();
+    small_armor_point3f_.clear();
 
 
     worldPoints=cv::Point3f(-smallArmorHalfWidth,-smallArmorHalfHeight,0);//左下角点
-    smallArmorPoint3f.emplace_back(worldPoints);
+    small_armor_point3f_.emplace_back(worldPoints);
     worldPoints=cv::Point3f(-smallArmorHalfWidth,smallArmorHalfHeight,0) ;//左上角点
-    smallArmorPoint3f.emplace_back(worldPoints);
+    small_armor_point3f_.emplace_back(worldPoints);
     worldPoints=cv::Point3f(smallArmorHalfWidth,smallArmorHalfHeight,0)  ;//右上角点
-    smallArmorPoint3f.emplace_back(worldPoints);
+    small_armor_point3f_.emplace_back(worldPoints);
     worldPoints=cv::Point3f(smallArmorHalfWidth,-smallArmorHalfHeight,0) ;//右下角点
-    smallArmorPoint3f.emplace_back(worldPoints);
+    small_armor_point3f_.emplace_back(worldPoints);
 
 
     float bigArmorHalfWidth   =116;
     float bigArmorHalfHeight  =26;
 
 
-    bigArmorPoint3f.clear();
+    big_armor_point3f_.clear();
     worldPoints=cv::Point3f(-bigArmorHalfWidth,-bigArmorHalfHeight,0);//左下角点
-    bigArmorPoint3f.emplace_back(worldPoints);
+    big_armor_point3f_.emplace_back(worldPoints);
     worldPoints=cv::Point3f(-bigArmorHalfWidth,bigArmorHalfHeight,0) ;//左上角点
-    bigArmorPoint3f.emplace_back(worldPoints);
+    big_armor_point3f_.emplace_back(worldPoints);
     worldPoints=cv::Point3f(bigArmorHalfWidth,bigArmorHalfHeight,0)  ;//右上角点
-    bigArmorPoint3f.emplace_back(worldPoints);
+    big_armor_point3f_.emplace_back(worldPoints);
     worldPoints=cv::Point3f(bigArmorHalfWidth,-bigArmorHalfHeight,0) ;//右下角点
-    bigArmorPoint3f.emplace_back(worldPoints);
+
     Init(0,0,0,0,0,15,0.028);
+    big_armor_point3f_.emplace_back(worldPoints);
 }
 
-cv::Point3f coordinatTransform::PNP(std::vector<cv::Point2f>&xy,bool SIZE,double &distance,float &yaw,float &pitch)
+cv::Point3f CoordinatTransform::PNP(std::vector<cv::Point2f>&xy,bool SIZE,double &distance,float &yaw,float &pitch)
 {
     cv::Mat rvec,tvec;
     if(SIZE==false){
         //big armor
-        solvePnP(bigArmorPoint3f,xy,cameraInternalParam,distortionParam,rvec,tvec);
+        solvePnP(big_armor_point3f_,xy,camera_internal_param_,distortion_param_,rvec,tvec);
     }
     else if (SIZE==true){//small armor
 
-        solvePnP(smallArmorPoint3f,xy,cameraInternalParam,distortionParam,rvec,tvec);
+        solvePnP(small_armor_point3f_,xy,camera_internal_param_,distortion_param_,rvec,tvec);
 
     }
     double X0=tvec.at<double>(0,0);                                             //X轴上世界coordinate相对摄像头coordinate的平移
@@ -70,8 +71,7 @@ cv::Point3f coordinatTransform::PNP(std::vector<cv::Point2f>&xy,bool SIZE,double
 */
     Point3f postion(X0/10,Y0/10,Z0/10);
     Transform(postion,yaw,pitch,10.5);
-
-
+    return cv::Point3f(X0,Y0,Z0);
 }
 
 void coordinatTransform::Init(float x,float y,float z,float pitch,float yaw, float init_v, float init_k) {
@@ -89,6 +89,7 @@ void coordinatTransform::Transform(cv::Point3f &postion, float &yaw, float &pitc
       -GetPitch((postion.z + offset_.z) / 100, -(postion.y + offset_.y) / 100, v)*180.0/PI + (float)(offset_pitch_ );
   //yaw positive direction :anticlockwise
   yaw = -(float) (atan2(postion.x + offset_.x, postion.z + offset_.z)) *180.0/PI + (float)(offset_yaw_);
+
 }
 
 float coordinatTransform::BulletModel(float x, float v, float angle) { //x:m,v:m/s,angle:rad
@@ -118,18 +119,18 @@ float coordinatTransform::GetPitch(float x, float y, float v) {
 
 }
 
-cv::Point2f coordinatTransform::PCoord2ICoord(cv::Point2f pixelPoint)
+cv::Point2f CoordinatTransform::PCoord2ICoord(cv::Point2f pixelPoint)
 {
     pixelPoint.x -= 320;
     pixelPoint.y -= 256;
-    pixelPoint.x *= length_per_pixel;
-    pixelPoint.y *= length_per_pixel;
+    pixelPoint.x *= length_per_pixel_;
+    pixelPoint.y *= length_per_pixel_;
     return pixelPoint;
 }
-cv::Point2f coordinatTransform::ICoord2CCoord(cv::Point2f imagePoint)
+cv::Point2f CoordinatTransform::ICoord2CCoord(cv::Point2f imagePoint)
 {
     cv::Point2f angle(0,0);
-    angle.x = atan(imagePoint.x / this->F);
-    angle.y = atan(imagePoint.y / this->F);
+    angle.x = atan(imagePoint.x / this->f_);
+    angle.y = atan(imagePoint.y / this->f_);
     return angle;
 }

@@ -1,19 +1,19 @@
 #include <serialPort/serialPort.h>
 
 
-serialPort::serialPort()
+SerialPort::SerialPort()
 {
 
 }
 
 
-serialPort::serialPort(const char * filename)
+SerialPort::SerialPort(const char * filename)
 {
     file_name_ = filename;
     buadrate_ = 0;
     //    serial_mode = NO_INIT;
 }
-bool serialPort::Init()
+bool SerialPort::Init()
 {
     fd = open(file_name_, O_RDWR | O_NOCTTY | O_SYNC);// Read/Write access to serial port// No terminal will control the process
     if(fd == -1)
@@ -65,19 +65,25 @@ bool serialPort::Init()
     return true;
 }
 
-void serialPort::send_data(const unsigned char* data,const int length)
+void SerialPort::send_data(const unsigned char* data,const int length)
 {
     write(fd,data,length);
 }
-bool serialPort:: get_data()
+bool SerialPort:: get_data()
 {
     static unsigned char r[22];
     tcflush(fd,TCIFLUSH);
     read(fd,&r,sizeof(r));
-
+/*
+    for(int i=0;i<22;i++)
+    {
+        printf("%x|",r[i]);
+    }
+    printf("\n");
+*/
     if(r[0]==0xAA && r[1]==0xAA)
     {
-        memcpy(receiceData,r,sizeof(r));
+        memcpy(receice_data_,r,sizeof(r));
         return 1;
     }
 

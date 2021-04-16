@@ -3,64 +3,64 @@
 CriticalCore::CriticalCore()
 {
 }
-void CriticalCore::Init(angleTick initialAngleTick)
+void CriticalCore::Init(AngleTick initialAngleTick)
 {
-    this->lastAngleTick = initialAngleTick;
-    this->consecutiveTimes = 0;
-    this->positiveOrNegative = 0;
-    this->lastSpeed.speed = 0;
-    this->lastSpeed.timestamp = 0;
-    this->t_inter = 0;
-    while(!varianceBuffer.empty()){varianceBuffer.pop();}//队列清零
-    this->varianceSum = 0;
+    this->last_angle_tick_ = initialAngleTick;
+    this->consecutive_times_ = 0;
+    this->positive_or_negative_ = 0;
+    this->last_speed_.speed = 0;
+    this->last_speed_.timestamp = 0;
+    this->t_inter_ = 0;
+    while(!variance_buffer_.empty()){variance_buffer_.pop();}//队列清零
+    this->variance_sum_ = 0;
 }
 
-void CriticalCore::amend(angleTick thisAngleTick)
+void CriticalCore::amend(AngleTick thisAngleTick)
 {
     float maxDeltaAngle;//如果大于这个角度，则认为发生跳变
     float DeltaAngle;
 
-    if(consecutiveTimes == 0)
+    if(consecutive_times_ == 0)
     {
-        maxDeltaAngle = getMaxDeltaAngle(thisAngleTick.timestamp - lastAngleTick.timestamp);
-        DeltaAngle = thisAngleTick.angle - lastAngleTick.angle;
+        maxDeltaAngle = getMaxDeltaAngle(thisAngleTick.timestamp - last_angle_tick_.timestamp);
+        DeltaAngle = thisAngleTick.angle - last_angle_tick_.angle;
 
         if(fabs(DeltaAngle) > maxDeltaAngle)
         {//跳变了
-            consecutiveTimes = 1;
-            jumpAngleTickBuffer[0].angle = thisAngleTick.angle;
-            jumpAngleTickBuffer[0].timestamp = thisAngleTick.timestamp;
+            consecutive_times_ = 1;
+            jump_angle_tick_buffer_[0].angle = thisAngleTick.angle;
+            jump_angle_tick_buffer_[0].timestamp = thisAngleTick.timestamp;
         }
         else
         {//连上了
-            amendPhase(lastAngleTick,thisAngleTick);
-            lastAngleTick = thisAngleTick;
+            amendPhase(last_angle_tick_,thisAngleTick);
+            last_angle_tick_ = thisAngleTick;
         }
     }
     else
     {
-        maxDeltaAngle = getMaxDeltaAngle(thisAngleTick.timestamp - jumpAngleTickBuffer[consecutiveTimes - 1].timestamp);
-        DeltaAngle = thisAngleTick.angle - jumpAngleTickBuffer[consecutiveTimes - 1].angle;
+        maxDeltaAngle = getMaxDeltaAngle(thisAngleTick.timestamp - jump_angle_tick_buffer_[consecutive_times_ - 1].timestamp);
+        DeltaAngle = thisAngleTick.angle - jump_angle_tick_buffer_[consecutive_times_ - 1].angle;
 
         if(fabs(DeltaAngle) > maxDeltaAngle)
         {//跳变了
-            consecutiveTimes = 0;
+            consecutive_times_ = 0;
         }
         else
         {//连上了
-            consecutiveTimes++;
-            jumpAngleTickBuffer[consecutiveTimes - 1] = thisAngleTick;
+            consecutive_times_++;
+            jump_angle_tick_buffer_[consecutive_times_ - 1] = thisAngleTick;
 
-            if(consecutiveTimes == CREDIBLE_CONSECUTIVE_TIMES)
+            if(consecutive_times_ == CREDIBLE_CONSECUTIVE_TIMES)
             {
                 //lastAngleTick和jumpAngleTickBuffer[0]之间的速度被忽略
                 for(int i = 0;i < CREDIBLE_CONSECUTIVE_TIMES - 1;i++)
                 {
-                    amendPhase(jumpAngleTickBuffer[i],jumpAngleTickBuffer[i + 1]);
+                    amendPhase(jump_angle_tick_buffer_[i],jump_angle_tick_buffer_[i + 1]);
                 }
-                lastAngleTick.angle = thisAngleTick.angle;
-                lastAngleTick.timestamp = thisAngleTick.timestamp;
-                consecutiveTimes = 0;
+                last_angle_tick_.angle = thisAngleTick.angle;
+                last_angle_tick_.timestamp = thisAngleTick.timestamp;
+                consecutive_times_ = 0;
             }
         }
     }
@@ -74,9 +74,9 @@ float CriticalCore::getMaxDeltaAngle(double timeInterval)
     return maxDeltaAngle + 0.01;
 }
 
-void CriticalCore::amendPhase(const angleTick preAngleTick,const angleTick afterAngleTick)
+void CriticalCore::amendPhase(const AngleTick preAngleTick,const AngleTick afterAngleTick)
 {
-    speedTick thisSpeed;
+    SpeedTick thisSpeed;
 
     //算出本帧和上一帧间的速度
     thisSpeed.speed = (afterAngleTick.angle - preAngleTick.angle) / (afterAngleTick.timestamp - preAngleTick.timestamp);
@@ -85,23 +85,23 @@ void CriticalCore::amendPhase(const angleTick preAngleTick,const angleTick after
     //判断正反转并去除正反特性
     if(thisSpeed.speed > 0)
     {
-        positiveOrNegative++;
-        if(positiveOrNegative == INT_MAX){positiveOrNegative = 1e3;}//防止溢出
+        positive_or_negative_++;
+        if(positive_or_negative_ == INT_MAX){positive_or_negative_ = 1e3;}//防止溢出
     }
     else
     {
-        positiveOrNegative--;
-        if(positiveOrNegative == INT_MIN){positiveOrNegative = -1e3;}//防止溢出
+        positive_or_negative_--;
+        if(positive_or_negative_ == INT_MIN){positive_or_negative_ = -1e3;}//防止溢出
     }
     thisSpeed.speed = fabs(thisSpeed.speed);
 
     //判断大小能量机关
-    this->varianceBuffer.push(pow(thisSpeed.speed - 1.047,2));
-    this->varianceSum += varianceBuffer.back();
-    if(varianceBuffer.size() > VARIANCE_BUFFER_MAX)//防止溢出
+    this->variance_buffer_.push(pow(thisSpeed.speed - 1.047,2));
+    this->variance_sum_ += variance_buffer_.back();
+    if(variance_buffer_.size() > VARIANCE_BUFFER_MAX)//防止溢出
     {
-        this->varianceSum -= varianceBuffer.front();
-        varianceBuffer.pop();
+        this->variance_sum_ -= variance_buffer_.front();
+        variance_buffer_.pop();
     }
 
     if(thisSpeed.speed < 2.090 + 0.1 && thisSpeed.speed > 0.52 - 0.1)//2.09是最大转速
@@ -110,9 +110,9 @@ void CriticalCore::amendPhase(const angleTick preAngleTick,const angleTick after
         float sub,subs[4];
         int minSubNum = 0;
         float minSub = FLT_MAX;
-        sub = thisSpeed.timestamp - lastSpeed.timestamp;
+        sub = thisSpeed.timestamp - last_speed_.timestamp;
         solveInverseTrigonometricFunction(thisSpeed.speed,a1,a2);
-        solveInverseTrigonometricFunction(lastSpeed.speed,b1,b2);
+        solveInverseTrigonometricFunction(last_speed_.speed,b1,b2);
         subs[0] = fabs(a1 - b1 - sub);
         subs[1] = fabs(a2 - b2 - sub);
         subs[2] = fabs(a1 - b2 - sub);
@@ -127,18 +127,18 @@ void CriticalCore::amendPhase(const angleTick preAngleTick,const angleTick after
         }
         switch(minSubNum)
         {
-        case 0:t_inter = lastSpeed.timestamp - a1;break;
-        case 1:t_inter = lastSpeed.timestamp - a2;break;
-        case 2:t_inter = lastSpeed.timestamp - a1;break;
-        case 3:t_inter = lastSpeed.timestamp - a2;break;
+        case 0:t_inter_ = last_speed_.timestamp - a1;break;
+        case 1:t_inter_ = last_speed_.timestamp - a2;break;
+        case 2:t_inter_ = last_speed_.timestamp - a1;break;
+        case 3:t_inter_ = last_speed_.timestamp - a2;break;
         }
     }
     else
     {
 
     }
-    lastSpeed.speed = thisSpeed.speed;
-    lastSpeed.timestamp = thisSpeed.timestamp;
+    last_speed_.speed = thisSpeed.speed;
+    last_speed_.timestamp = thisSpeed.timestamp;
 
 }
 void CriticalCore::solveInverseTrigonometricFunction(float A,float &t1,float &t2)
@@ -157,12 +157,12 @@ float CriticalCore::getFutureAngle(const long double interval)
 {
     //delta_pos = 0.785 * -1 / 1.884 * [cos(1.884 * (t + timeInterval)) - cos(1.884 * t)] + 1.305 * timeInterval
     float pos;
-    double t = lastAngleTick.timestamp;
+    double t = last_angle_tick_.timestamp;
 
-    if(varianceSum > 10)
+    if(variance_sum_ > 10)
     {
-        pos = lastAngleTick.angle + 0.785 * -1 / 1.884 * (cos(1.884 * (t + interval)) - cos(1.884 * t));
-        if(positiveOrNegative >= 0)
+        pos = last_angle_tick_.angle + 0.785 * -1 / 1.884 * (cos(1.884 * (t + interval)) - cos(1.884 * t));
+        if(positive_or_negative_ >= 0)
         {
             pos += 1.305 * interval;
         }
@@ -173,8 +173,8 @@ float CriticalCore::getFutureAngle(const long double interval)
     }
     else
     {
-        pos = lastAngleTick.angle;
-        if(positiveOrNegative >= 0)
+        pos = last_angle_tick_.angle;
+        if(positive_or_negative_ >= 0)
         {
             pos += 1.047 * interval;
         }

@@ -1,5 +1,5 @@
-#include "videoSource.h"
-videoSource* videoSourceUtility::sourceInit()
+#include "videosource.h"
+VideoSource* VideoSourceUtility::sourceInit()
 {
     //读入视频配置参数
     //cv::FileStorage videoSourceArgumentsRead(videoSourceArgumentsPath,cv::FileStorage::READ);
@@ -9,7 +9,7 @@ videoSource* videoSourceUtility::sourceInit()
     //    exit;
     //}
     //创建视频源
-    videoSource *VideoSource;
+    VideoSource *VideoSource;
     //int Type=videoSourceArgumentsRead["Type"];
     if(0)//Type为1则为视频，为0则为相机
     {//视频
@@ -17,7 +17,7 @@ videoSource* videoSourceUtility::sourceInit()
     }
     else
     {//相机
-        VideoSource = new cameraVideoSource;
+        VideoSource = new CameraVideoSource;
     }
     //videoSourceArgumentsRead["PixelSize"]>>VideoSource->cameraInternalReference.PixelSize;
     //videoSourceArgumentsRead["SensorSize"]>>VideoSource->cameraInternalReference.SensorSize;
@@ -27,15 +27,15 @@ videoSource* videoSourceUtility::sourceInit()
     return VideoSource;
 }
 
-videoSource::videoSource()
+VideoSource::VideoSource()
 {
 }
 
-cameraVideoSource::cameraVideoSource()
+CameraVideoSource::CameraVideoSource()
 {
 }
 
-bool cameraVideoSource::Init()
+bool CameraVideoSource::Init()
 {
     if(! CAMERA.cameraInit())
     {
@@ -49,13 +49,13 @@ bool cameraVideoSource::Init()
     return 1;
 }
 
-void cameraVideoSource::startPush()
+void CameraVideoSource::startPush()
 {
-    VideoPushThread = std::thread(&cameraVideoSource::cameraGrabImageCycle,this);
+    VideoPushThread = std::thread(&CameraVideoSource::cameraGrabImageCycle,this);
     while(ImageBuffer.read()->SrcImage.size().height == 0){}//等待读入第一张图片
 }
 
-void cameraVideoSource::cameraGrabImageCycle()
+void CameraVideoSource::cameraGrabImageCycle()
 {
     while(true)
     {
@@ -67,7 +67,7 @@ void cameraVideoSource::cameraGrabImageCycle()
     }
 }
 
-ImageData* cameraVideoSource::getImage()
+ImageData* CameraVideoSource::getImage()
 {
     return(ImageBuffer.read());
 }

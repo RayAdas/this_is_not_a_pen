@@ -17,7 +17,7 @@
 #include "preferences.h"
 
 #include "targetModel/buff.h"
-#include "videoSource/videoSource.h"
+#include "videoSource/videosource.h"
 #include "serialPort/serialPort.h"
 #include "targetModel/robot.h"
 #include "coordinateTransform/coordinateTransform.h"
@@ -35,7 +35,7 @@ using namespace cv;
 int main()
 {
     //创建视频源
-    videoSource *VideoSource = videoSourceUtility::sourceInit();
+    VideoSource *VideoSource = VideoSourceUtility::sourceInit();
 
     //创建角度解算器
 
@@ -56,14 +56,14 @@ int main()
                                */
     cv::Size2f smallArmor;smallArmor.height = 141;smallArmor.width = 125;
     cv::Size2f bigArmor;bigArmor.height = 243.2;smallArmor.width = 125;
-    coordinatTransform CameraTransformer(cameraInternalParam,
+    CoordinatTransform CameraTransformer(cameraInternalParam,
                                          distortionParam,
                                          smallArmor,
                                          bigArmor);
 
     //创建串口
     char dev[]={"/dev/ttyTHS2"};
-    serialPort Uart1(dev);
+    SerialPort Uart1(dev);
     UartKeeper *UKeeper;
 
     switch(THIS_ROBOT_TYPE)
@@ -76,10 +76,11 @@ int main()
     //创建弹道解算器
 
     //创建控制器
-    controller Controller(VideoSource,&CameraTransformer,UKeeper);
+    Controller Controller(VideoSource,&CameraTransformer,UKeeper);
 
     while(true)
     {
+        cout<<"<=======初始化=======>"<<endl;
         if(Uart1.Init() == false)
         {
             cout<<"serial port offline"<<endl;
