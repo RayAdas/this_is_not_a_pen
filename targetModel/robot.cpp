@@ -159,7 +159,6 @@ ArmorModel::ArmorModel(CoordinatTransform *a)
     ImageSize =Size(640,512);
     offset_point.x = 0;
     offset_point.y = 0;
-    EnemyColor=true;
 }
 void ArmorModel::setInputImage(Mat input) {
     frame = input.clone();
@@ -699,17 +698,17 @@ Point3f ArmorModel::GetArmorCenter()
 
     if(targetArrmor.armorType != UNKNOWN_ARMOR)
     {
-        return Point2f(targetArrmor.yaw,targetArrmor.pitch);
+        //return Point2f(targetArrmor.yaw,targetArrmor.pitch);
     }
     else
     {
-        return Point2f(-1,-1);
+        //return Point2f(-1,-1);
     }
 
 
 }
 
-void armorModel::getArmorImagePoint2f(ArmorDescriptor &armor, Point2f Points[])
+void ArmorModel::getArmorImagePoint2f(ArmorDescriptor &armor, Point2f Points[])
 {
     if(armor.armorsense  == Lightright)
     {
@@ -729,7 +728,7 @@ void armorModel::getArmorImagePoint2f(ArmorDescriptor &armor, Point2f Points[])
 
 
 
-void armorModel::judgeArmorrType(ArmorDescriptor &a,float arrmorHBW)
+void ArmorModel::judgeArmorrType(ArmorDescriptor &a,float arrmorHBW)
 {
 
     if(arrmorHBW >=1.6 && arrmorHBW <= 3)
@@ -746,7 +745,7 @@ void armorModel::judgeArmorrType(ArmorDescriptor &a,float arrmorHBW)
     }
 }
 
-double armorModel::Distance(Point2f a, Point2f b)
+double ArmorModel::Distance(Point2f a, Point2f b)
 {
     return sqrt((a.x - b.x) * (a.x - b.x) +
                 (a.y - b.y) * (a.y - b.y));

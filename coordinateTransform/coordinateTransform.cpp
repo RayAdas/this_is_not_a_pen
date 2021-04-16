@@ -74,7 +74,7 @@ cv::Point3f CoordinatTransform::PNP(std::vector<cv::Point2f>&xy,bool SIZE,double
     return cv::Point3f(X0,Y0,Z0);
 }
 
-void coordinatTransform::Init(float x,float y,float z,float pitch,float yaw, float init_v, float init_k) {
+void CoordinatTransform::Init(float x,float y,float z,float pitch,float yaw, float init_v, float init_k) {
   offset_.x = x;
   offset_.y = y;
   offset_.z = z;
@@ -84,7 +84,7 @@ void coordinatTransform::Init(float x,float y,float z,float pitch,float yaw, flo
   init_k_ = init_k;
 }
 
-void coordinatTransform::Transform(cv::Point3f &postion, float &yaw, float &pitch,float v) {
+void CoordinatTransform::Transform(cv::Point3f &postion, float &yaw, float &pitch,float v) {
   pitch =
       -GetPitch((postion.z + offset_.z) / 100, -(postion.y + offset_.y) / 100, v)*180.0/PI + (float)(offset_pitch_ );
   //yaw positive direction :anticlockwise
@@ -92,7 +92,7 @@ void coordinatTransform::Transform(cv::Point3f &postion, float &yaw, float &pitc
 
 }
 
-float coordinatTransform::BulletModel(float x, float v, float angle) { //x:m,v:m/s,angle:rad
+float CoordinatTransform::BulletModel(float x, float v, float angle) { //x:m,v:m/s,angle:rad
   float t, y;
   t = (float)((exp(init_k_ * x) - 1) / (init_k_ * v * cos(angle)));
   y = (float)(v * sin(angle) * t - GRAVITY * t * t / 2);
@@ -100,7 +100,7 @@ float coordinatTransform::BulletModel(float x, float v, float angle) { //x:m,v:m
 }
 
 //x:distance , y: height
-float coordinatTransform::GetPitch(float x, float y, float v) {
+float CoordinatTransform::GetPitch(float x, float y, float v) {
   float y_temp, y_actual, dy;
   float a;
   y_temp = y;

@@ -120,7 +120,7 @@ public:
 class ArmorModel:public TargetModel
 {
 public:
-    armorModel(coordinatTransform*);
+    ArmorModel(CoordinatTransform*);
 
     void setImage(cv::Mat& set_src);    //预处理图像
 

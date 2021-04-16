@@ -56,7 +56,7 @@ void Controller::mainCycle()
             uart1_keeper_->set(&lingwu,AOrR);
             active_model_->amend(video_source_->getImage());
             target = active_model_->getFuturePosition(0);;
-            if(target.x ->== -1 || target.y == -1 || target.z == -1)//没找到
+            if(target.x == -1 || target.y == -1 || target.z == -1)//没找到
             {
                 uart1_keeper_->set(&lingling,YunTaiMode);
                 uart1_keeper_->set(&lingling,FirePermit);
