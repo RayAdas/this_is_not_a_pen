@@ -149,12 +149,12 @@ public:
     double Distance(Point2f, Point2f);
     //explicit armorModel(Mat& input);
     void amend(ImageData* imageData) override;//修正预测模型
-    //virtual amend(陀螺仪数据) = 0;//修正预测模型
+    void amend(AxisData* axisData) override;//修正预测模型
     cv::Point3f getFuturePosition(const float offset) override;//获得预测点
 
 
-
 private:
+    cv::Point2f last_axis_data_;
     CoordinatTransform* pnpsolve;
     Point3f GetArmorCenter();
     void setInputImage(Mat input);

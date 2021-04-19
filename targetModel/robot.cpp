@@ -528,7 +528,7 @@ Point3f ArmorModel::GetArmorCenter()
 
 #endif
             judgeArmorrType(targetArrmorTemp,arrmorHBW);
-            cout << targetArrmorTemp.armorType<<endl;
+            //cout << targetArrmorTemp.armorType<<endl;
 
             float length=0;
             getLightLen(PointArrmorTemp,length);
@@ -656,13 +656,13 @@ Point3f ArmorModel::GetArmorCenter()
             {
                 if(targetArrmor.armorType==SMALL_ARMOR)
                 {
-                    pnpsolve->PNP(targetArrmor.armorPoints,true,armorDistance,yaw,pitch);
+                    tvec = pnpsolve->PNP(targetArrmor.armorPoints,true,armorDistance,yaw,pitch);
 
                 }
                 else if(targetArrmor.armorType==BIG_ARMOR)
 
                 {
-                    pnpsolve->PNP(targetArrmor.armorPoints,false,armorDistance,yaw,pitch);
+                    tvec = pnpsolve->PNP(targetArrmor.armorPoints,false,armorDistance,yaw,pitch);
 
                 }
                 targetArrmor.pitch=pitch;
@@ -693,15 +693,20 @@ Point3f ArmorModel::GetArmorCenter()
     #ifdef VISUAL_ROBOT
     imshow("旋转矩形目标装甲版",src_roi);
     imshow("原始目标装甲版",frame);
-    waitKey(1);
+    waitKey(0);
     #endif
 
     if(targetArrmor.armorType != UNKNOWN_ARMOR)
     {
         //return Point2f(targetArrmor.yaw,targetArrmor.pitch);
+        //tvec.x += last_axis_data_.RA_yaw
+
+        cv::Point3f axisPoint = CoordinatTransform::CCoord2ACoord(tvec,last_axis_data_);
+        return axisPoint;
     }
     else
     {
+        return cv::Point3f(-1,-1,-1);
         //return Point2f(-1,-1);
     }
 
@@ -762,6 +767,11 @@ double ArmorModel::Distance(Point2f a, Point2f b)
      float rightlength=Distance(lightPoint2fs[2],lightPoint2fs[3]);
 
      len=leftLength > rightlength ? leftLength : rightlength;
+ }
+ void ArmorModel::amend(AxisData* axisData)//修正预测模型
+ {
+     last_axis_data_.x = axisData->RA_yaw;
+     last_axis_data_.y = axisData->RA_pitch;
  }
 
 

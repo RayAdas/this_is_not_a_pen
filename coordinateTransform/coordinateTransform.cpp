@@ -1,9 +1,9 @@
- #include "coordinateTransform.h"
+#include "coordinateTransform.h"
 
 CoordinatTransform::CoordinatTransform(cv::Mat cameraInternalParam,
-                   cv::Mat distortionParam,
-                   cv::Size2f smallArmor,
-                   cv::Size2f bigArmor):f_(6.308e-03),length_per_pixel_(4.8e-6)
+                                       cv::Mat distortionParam,
+                                       cv::Size2f smallArmor,
+                                       cv::Size2f bigArmor):f_(6.308e-03),length_per_pixel_(4.8e-6)
 {
     this->camera_internal_param_ = cameraInternalParam;
     this->distortion_param_ = distortionParam;
@@ -58,10 +58,11 @@ cv::Point3f CoordinatTransform::PNP(std::vector<cv::Point2f>&xy,bool SIZE,double
     double Y0=tvec.at<double>(0,1);                                             //Y轴上世界coordinate相对摄像头coordinate的平移
     double Z0=tvec.at<double>(0,2);                                             //z轴上世界coordinate相对摄像头coordinate的平移
     distance=sqrt(X0*X0+Y0*Y0+Z0*Z0);
-//this position need more accuraciation
+    cout<<tvec<<endl;
+    //this position need more accuraciation
     //plz ask me for more information and decision,thx
 
-/*
+    /*
     yaw = atan(X0/distance);
     pitch = atan(Y0/distance);
 
@@ -71,51 +72,52 @@ cv::Point3f CoordinatTransform::PNP(std::vector<cv::Point2f>&xy,bool SIZE,double
 */
     Point3f postion(X0/10,Y0/10,Z0/10);
     Transform(postion,yaw,pitch,10.5);
-    return cv::Point3f(X0,Y0,Z0);
+    return cv::Point3f(yaw,pitch,0);
+    //return tvec;
 }
 
 void CoordinatTransform::Init(float x,float y,float z,float pitch,float yaw, float init_v, float init_k) {
-  offset_.x = x;
-  offset_.y = y;
-  offset_.z = z;
-  offset_pitch_ = pitch;
-  offset_yaw_ = yaw;
- // init_v_ = init_v;
-  init_k_ = init_k;
+    offset_.x = x;
+    offset_.y = y;
+    offset_.z = z;
+    offset_pitch_ = pitch;
+    offset_yaw_ = yaw;
+    // init_v_ = init_v;
+    init_k_ = init_k;
 }
 
 void CoordinatTransform::Transform(cv::Point3f &postion, float &yaw, float &pitch,float v) {
-  pitch =
-      -GetPitch((postion.z + offset_.z) / 100, -(postion.y + offset_.y) / 100, v)*180.0/PI + (float)(offset_pitch_ );
-  //yaw positive direction :anticlockwise
-  yaw = -(float) (atan2(postion.x + offset_.x, postion.z + offset_.z)) *180.0/PI + (float)(offset_yaw_);
+    pitch =
+            -GetPitch((postion.z + offset_.z) / 100, -(postion.y + offset_.y) / 100, v)*180.0/PI + (float)(offset_pitch_ );
+    //yaw positive direction :anticlockwise
+    yaw = -(float) (atan2(postion.x + offset_.x, postion.z + offset_.z)) *180.0/PI + (float)(offset_yaw_);
 
 }
 
 float CoordinatTransform::BulletModel(float x, float v, float angle) { //x:m,v:m/s,angle:rad
-  float t, y;
-  t = (float)((exp(init_k_ * x) - 1) / (init_k_ * v * cos(angle)));
-  y = (float)(v * sin(angle) * t - GRAVITY * t * t / 2);
-  return y;
+    float t, y;
+    t = (float)((exp(init_k_ * x) - 1) / (init_k_ * v * cos(angle)));
+    y = (float)(v * sin(angle) * t - GRAVITY * t * t / 2);
+    return y;
 }
 
 //x:distance , y: height
 float CoordinatTransform::GetPitch(float x, float y, float v) {
-  float y_temp, y_actual, dy;
-  float a;
-  y_temp = y;
-  // by iteration
-  for (int i = 0; i < 20; i++) {
-    a = (float) atan2(y_temp, x);
-    y_actual = BulletModel(x, v, a);
-    dy = y - y_actual;
-    y_temp = y_temp + dy;
-    if (fabsf(dy) < 0.001) {
-      break;
+    float y_temp, y_actual, dy;
+    float a;
+    y_temp = y;
+    // by iteration
+    for (int i = 0; i < 20; i++) {
+        a = (float) atan2(y_temp, x);
+        y_actual = BulletModel(x, v, a);
+        dy = y - y_actual;
+        y_temp = y_temp + dy;
+        if (fabsf(dy) < 0.001) {
+            break;
+        }
+        //printf("iteration num %d: angle %f,temp target y:%f,err of y:%f\n",i+1,a*180/3.1415926535,yTemp,dy);
     }
-    //printf("iteration num %d: angle %f,temp target y:%f,err of y:%f\n",i+1,a*180/3.1415926535,yTemp,dy);
-  }
-  return a;
+    return a;
 
 }
 
@@ -132,5 +134,25 @@ cv::Point2f CoordinatTransform::ICoord2CCoord(cv::Point2f imagePoint)
     cv::Point2f angle(0,0);
     angle.x = atan(imagePoint.x / this->f_);
     angle.y = atan(imagePoint.y / this->f_);
+    angle.y *= -1;
     return angle;
+}
+cv::Point3f CoordinatTransform::CCoord2ACoord(cv::Point3f cameraPoint,cv::Point2f axisData)
+{
+    cv::Point2f rotateAngle;
+    cv::Mat _cameraPoint = (cv::Mat_<float>(3,1)<<cameraPoint.x,cameraPoint.y,cameraPoint.z);
+    rotateAngle.x = -axisData.x;
+    rotateAngle.y = -axisData.y;
+    cv::Mat Ry = (cv::Mat_<float>(3,3)<<
+                  cos(rotateAngle.y),0,-sin(rotateAngle.y),
+                  0,1,0,
+                  sin(rotateAngle.y),0,cos(rotateAngle.y));
+    cv::Mat Rx = (cv::Mat_<float>(3,3)<<
+                  1,0,0,
+                  0,cos(rotateAngle.x),sin(rotateAngle.x),
+                  0,-sin(rotateAngle.x),cos(rotateAngle.x));
+    cv::Mat _axisPoint;
+    _axisPoint = Ry * Rx * _cameraPoint;
+    cv::Point3f axisPoint(_axisPoint.at<float>(0),_axisPoint.at<float>(1),_axisPoint.at<float>(2));
+    return axisPoint;
 }

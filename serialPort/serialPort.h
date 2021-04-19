@@ -23,13 +23,5 @@ private:
     const char* file_name_;
     int buadrate_;//0 or 1
 };
-
-
-
-
-
-
-
-
 #endif // USARTPORT
 

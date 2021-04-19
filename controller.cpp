@@ -7,7 +7,7 @@ Controller::Controller(VideoSource *videoSource,CoordinatTransform *CameraTransf
     this->video_source_ = videoSource;
     this->camera_transformer_ = CameraTransformer;
     this->uart1_keeper_ = uart1;
-    this->buff_model_ = new BuffModel;
+    this->buff_model_ = new BuffModel(CameraTransformer);
     this->armor_model_ = new ArmorModel(CameraTransformer);
 }
 
@@ -19,11 +19,16 @@ void Controller::boot(void)
 
 void Controller::mainCycle()
 {
+    static ImageData* lastImageData_p;//上一个ImageData指针，用于在摄像头慢于图像处理时，同步摄像头与图像处理
     cv::TickMeter tm;
+
+    ImageData imgd;
+    cv::VideoCapture vc("/home/awaki/Videos/red.avi");
+    //cv::VideoCapture vc("/home/awaki/Videos/Video_2021_01_18_133731_1.avi");
+
     while(true)
     {
         tm.start();
-
         uart1_keeper_->read(axis_data_,enemy_color_,aim_mode_);
         buff_model_->setEnemyColor(*enemy_color_);
         armor_model_->setEnemyColor(*enemy_color_);
@@ -44,46 +49,70 @@ void Controller::mainCycle()
         }
         else{}//运行到这就是出错了
 
+        uart1_keeper_->set(&ZERO_FIVE,AOrR);
+
         if(*aim_mode_ != manualMode)
         {
-            const unsigned char lingwu = 0x05;
-            const unsigned char lingyi = 0x01;
-            const unsigned char lingling = 0x00;
-
             cv::Point3f target;
-            cv::Point2f gimbal;
-            uart1_keeper_->set(&lingyi,FirePermit);
-            uart1_keeper_->set(&lingwu,AOrR);
-            active_model_->amend(video_source_->getImage());
-            target = active_model_->getFuturePosition(0);;
-            if(target.x == -1 || target.y == -1 || target.z == -1)//没找到
+            cv::Point2f gimbal(0,0);
+
+            if(*aim_mode_ == buffMode)//步兵英雄限定,我们至今不知道为什么电控要分机械角模式和陀螺仪模式
             {
-                uart1_keeper_->set(&lingling,YunTaiMode);
-                uart1_keeper_->set(&lingling,FirePermit);
+                uart1_keeper_->set(&ZERO_FIVE,AOrR);//有可能设置反了，需要确认一下
             }
             else
             {
-                uart1_keeper_->set(&lingyi,YunTaiMode);
-                if(fabs(target.x) < 3 && fabs(target.y) < 3)
+                uart1_keeper_->set(&ZERO_SIX,AOrR);//有可能设置反了，需要确认一下
+            }
+
+            /*
+            ImageData* ImageData_p;
+            do
+            {
+                ImageData_p= video_source_->getImage();
+            }
+            while(ImageData_p != lastImageData_p);//等待直到相机读入新数据
+            lastImageData_p = ImageData_p;
+            active_model_->amend(ImageData_p);
+            */
+
+            vc >> imgd.SrcImage;
+            cv::resize(imgd.SrcImage,imgd.SrcImage,cv::Size2i(640,512));
+            active_model_->amend(&imgd);
+
+            active_model_->amend(axis_data_);
+            target = active_model_->getFuturePosition(0);;
+            if(target.x == -1 || target.y == -1 || target.z == -1)
+            {//没找到
+                uart1_keeper_->set(&ZERO_ZERO,YunTaiMode);//哨兵限定：进入巡逻模式
+                uart1_keeper_->set(&ZERO_ZERO,FirePermit);
+                uart1_keeper_->set(&gimbal.x,YawAngle);//此时gimbal为0
+                uart1_keeper_->set(&gimbal.y,PitchAngle);//此时gimbal为0
+                uart1_keeper_->write();
+            }
+            else
+            {//找到目标
+                //进行云台控制计算
+                gimbal.x = atan(target.x / target.z)
+                        - axis_data_->RA_yaw;
+                gimbal.y = TrajectoryCalculation::getElevation(target.z,target.y,axis_data_->ProjectileVel)
+                        - axis_data_->RA_pitch;
+                gimbal.x = gimbal.x * 180 / M_PI;
+                gimbal.y = gimbal.y * 180 / M_PI;
+                if(fabs(gimbal.x) < 3 && fabs(gimbal.y) < 3)
                 {
-                    uart1_keeper_->set(&lingyi,FirePermit);
+                    uart1_keeper_->set(&ZERO_ONE,FirePermit);
                 }
                 else
                 {
-                    uart1_keeper_->set(&lingling,FirePermit);
+                    uart1_keeper_->set(&ZERO_ZERO,FirePermit);
                 }
-                //target = camera_transformer_->PCoord2ICoord(target);//注意图像大小
-                //target = camera_transformer_->ICoord2CCoord(target);
-                gimbal.x = atan(target.x / target.z);
-                gimbal.y = atan(target.y / target.z) + GetPitch(target.z,target.y,15);
 
-                gimbal.x = gimbal.x * 180 / M_PI;
-                gimbal.y = gimbal.y * 180 / M_PI;
-                gimbal.x = (-1) * gimbal.x;
-                cout<<gimbal.x<<"||"<<gimbal.y<<endl;
+                uart1_keeper_->set(&ZERO_ONE,YunTaiMode);//哨兵限定：进入自瞄模式
                 uart1_keeper_->set(&gimbal.x,YawAngle);
                 uart1_keeper_->set(&gimbal.y,PitchAngle);
                 uart1_keeper_->write();
+                cout<<gimbal.x<<"||"<<gimbal.y<<endl;
             }
 
         }
@@ -91,30 +120,4 @@ void Controller::mainCycle()
         //cout<<"time:"<<tm.getTimeMilli()<<endl;
         tm.reset();
     }
-}
-
-float GetPitch(float x, float y, float v) {
-    float y_temp, y_actual, dy;
-    float a;
-    y_temp = y;
-    // by iteration
-    for (int i = 0; i < 20; i++) {
-        a = (float) atan2(y_temp, x);
-        y_actual = BulletModel(x, v, a);
-        dy = y - y_actual;
-        y_temp = y_temp + dy;
-        if (fabsf(dy) < 0.001) {
-            break;
-        }
-        //printf("iteration num %d: angle %f,temp target y:%f,err of y:%f\n",i+1,a*180/3.1415926535,yTemp,dy);
-    }
-    return a;
-
-}
-float BulletModel(float x, float v, float angle) { //x:m,v:m/s,angle:rad
-    float init_k_ = 1;
-    float t, y;
-    t = (float)((exp(init_k_ * x) - 1) / (init_k_ * v * cos(angle)));
-    y = (float)(v * sin(angle) * t - GRAVITY * t * t / 2);
-    return y;
 }

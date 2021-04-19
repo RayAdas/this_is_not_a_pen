@@ -49,7 +49,7 @@ SOURCES += \
     targetModel/robot.cpp \
     targetModel/buff.cpp \
     targetModel/targetModel.cpp \
-    targetModel/criticalcore.cpp \
+    #targetModel/criticalcore.cpp \
     videoSource/camera.cpp \
     main.cpp \
     tool/tool.cpp \
@@ -68,7 +68,7 @@ HEADERS += \
     targetModel/robot.h \
     targetModel/buff.h \
     targetModel/targetModel.h \
-    targetModel/criticalcore.h \
+    #targetModel/criticalcore.h \
     videoSource/camera.h \
     tool/tool.h \
     tool/kalman.h \

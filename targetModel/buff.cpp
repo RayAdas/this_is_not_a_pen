@@ -234,9 +234,9 @@ BuffTick BuffTickUtility::Mat2buffTick(const cv::Mat &src,TeamColor enemyColor)
             }
             cv::namedWindow("visual",cv::WINDOW_NORMAL);
             cv::imshow("visual",visual);
-            cv::waitKey(1);
         }
     }
+    cv::waitKey(0);
 #endif
     return thisBuffTick;
 }
@@ -266,10 +266,9 @@ void BuffTickUtility::preprocess(const cv::Mat &src,cv::Mat &dst,TeamColor enemy
         cv::threshold(dst,dst,subThreMinBule,subThreMaxBule,cv::THRESH_BINARY);//通道相减的灰度图进行二值化
 
     }
-    cv::waitKey(1);
     cv::Mat elementDilateBule=cv::getStructuringElement(cv::MORPH_RECT,cv::Size(1,3),cv::Point(-1,-1));
     cv::morphologyEx(dst,dst,cv::MORPH_OPEN ,elementDilateBule);
-    cout<<"time:"<<tm.getCounter()<<"||"<<tm.getTimeMilli()<<endl;
+    //cout<<"time:"<<tm.getCounter()<<"||"<<tm.getTimeMilli()<<endl;
 
 }
 
@@ -362,24 +361,33 @@ void BuffModel::amend(ImageData* imageData)//修正预测模型
     AngleTick A;
     A.angle = last_buff_tick_.angle;
     A.timestamp = last_buff_tick_.timestamp.tv_sec + last_buff_tick_.timestamp.tv_usec * 1e-6;
+
+    static long double virtual_time = 0;
+    virtual_time += 16.667e-03;
+    A.timestamp = virtual_time;
     static bool b = true;
     if(b)
     {
-        criti_calcore_.Init(A);
+        initAngle(A);
         b = false;
     }
     else
     {
-        criti_calcore_.amend(A);
+        initAngle(A);
     }
+
 }
-BuffModel::BuffModel()
+BuffModel::BuffModel(CoordinatTransform* coordinatTransform)
+{
+    this->coordinat_transform_ = coordinatTransform;
+}
+BuffModel::~BuffModel()
 {
 }
 cv::Point3f BuffModel::getFuturePosition(const float offset)//获得预测点
 {
     cv::Point3f futurePosition;
-    float angle = criti_calcore_.getFutureAngle(offset);
+    float angle = getFutureAngle(offset);
     if(angle < 0)
     {
         return cv::Point3f(-1,-1,-1);
@@ -389,10 +397,216 @@ cv::Point3f BuffModel::getFuturePosition(const float offset)//获得预测点
     futurePosition.z = BUFF_CENTER_DISTANCE;
     return futurePosition;
 }
-cv::Point2f BuffModel::getCurrentDirection()
+cv::Point2f BuffModel::getCameraCurrentDirection()
 {
     cv::Point2f d;
-    d.x = atan(BUFF_CENTER_RADIUS * cos(last_buff_tick_.angle) / BUFF_CENTER_DISTANCE);
-    d.y = atan((BUFF_CENTER_RADIUS * sin(last_buff_tick_.angle) + BUFF_CENTER_HEIGHT) / BUFF_CENTER_DISTANCE);
+    d = coordinat_transform_->ICoord2CCoord(coordinat_transform_->PCoord2ICoord(last_buff_tick_.center));
     return d;
 }
+void BuffModel::amend(AxisData* axisData)//buff不使用外部陀螺仪数据修正预测模型
+{
+    cv::Point2f cameraCurrentDirection = getCameraCurrentDirection();
+    axisData->RA_yaw = cameraCurrentDirection.x;
+    axisData->RA_pitch = cameraCurrentDirection.y;
+}
+
+/*=======预测部份=======*/
+void BuffModel::initAngle(const AngleTick initialAngleTick)
+{
+    this->last_angle_tick_ = initialAngleTick;
+    this->consecutive_times_ = 0;
+    this->positive_or_negative_ = 0;
+    this->last_speed_.speed = 0;
+    this->last_speed_.timestamp = 0;
+    this->t_inter_ = 0;
+    while(!variance_buffer_.empty()){variance_buffer_.pop();}//队列清零
+    this->variance_sum_ = 0;
+}
+
+void BuffModel::amendAngle(const AngleTick thisAngleTick)
+{
+    float maxDeltaAngle;//如果大于这个角度，则认为发生跳变
+    float DeltaAngle;
+
+    if(consecutive_times_ == 0)
+    {
+        maxDeltaAngle = getMaxDeltaAngle(thisAngleTick.timestamp - last_angle_tick_.timestamp);
+        DeltaAngle = thisAngleTick.angle - last_angle_tick_.angle;
+
+        if(fabs(DeltaAngle) > maxDeltaAngle)
+        {//跳变了
+            consecutive_times_ = 1;
+            jump_angle_tick_buffer_[0].angle = thisAngleTick.angle;
+            jump_angle_tick_buffer_[0].timestamp = thisAngleTick.timestamp;
+        }
+        else
+        {//连上了
+            amendPhase(last_angle_tick_,thisAngleTick);
+            last_angle_tick_ = thisAngleTick;
+        }
+    }
+    else
+    {
+        maxDeltaAngle = getMaxDeltaAngle(thisAngleTick.timestamp - jump_angle_tick_buffer_[consecutive_times_ - 1].timestamp);
+        DeltaAngle = thisAngleTick.angle - jump_angle_tick_buffer_[consecutive_times_ - 1].angle;
+
+        if(fabs(DeltaAngle) > maxDeltaAngle)
+        {//跳变了
+            consecutive_times_ = 0;
+        }
+        else
+        {//连上了
+            consecutive_times_++;
+            jump_angle_tick_buffer_[consecutive_times_ - 1] = thisAngleTick;
+
+            if(consecutive_times_ == CREDIBLE_CONSECUTIVE_TIMES)
+            {
+                //lastAngleTick和jumpAngleTickBuffer[0]之间的速度被忽略
+                for(int i = 0;i < CREDIBLE_CONSECUTIVE_TIMES - 1;i++)
+                {
+                    amendPhase(jump_angle_tick_buffer_[i],jump_angle_tick_buffer_[i + 1]);
+                }
+                last_angle_tick_.angle = thisAngleTick.angle;
+                last_angle_tick_.timestamp = thisAngleTick.timestamp;
+                consecutive_times_ = 0;
+            }
+        }
+    }
+}
+float BuffModel::getMaxDeltaAngle(double timeInterval)
+{
+    //pos = 0.785 * -1 / 1.884 * cos(1.884 * t) + 1.305 * t - (-1 * 0.785 / 1.884) + pos(0)
+    //delta_pos = 0.785 * -1 / 1.884 * [cos(1.884 * (t + timeInterval)) - cos(1.884 * t)] + 1.305 * timeInterval
+    float maxDeltaAngle;
+    maxDeltaAngle = 0.785 / 0.942 * sin(0.942 * timeInterval) + 1.305 * timeInterval;
+    return maxDeltaAngle + 0.1;
+}
+
+void BuffModel::amendPhase(const AngleTick preAngleTick,const AngleTick afterAngleTick)
+{
+    SpeedTick thisSpeed;
+
+    //算出本帧和上一帧间的速度
+    thisSpeed.speed = (afterAngleTick.angle - preAngleTick.angle) / (afterAngleTick.timestamp - preAngleTick.timestamp);
+    thisSpeed.timestamp = (afterAngleTick.timestamp + preAngleTick.timestamp) / 2;
+
+    /*调试用的
+    static cv::Mat img = cv::Mat::zeros(800,800,CV_8UC3);
+    static int i = 0;
+    static long double ss = 0;
+    ss += thisSpeed.speed;
+    std::cout<<thisSpeed.speed<<std::endl;
+    cv::circle(img,cv::Point2i(i,thisSpeed.speed * 100 + 400),1,cv::Scalar(255,255,255));
+    cv::imshow("img",img);
+    i++;
+    std::cout<<ss / i<<std::endl;
+    */
+
+    //判断正反转并去除正反特性
+    if(thisSpeed.speed > 0)
+    {
+        positive_or_negative_++;
+        if(positive_or_negative_ == INT_MAX){positive_or_negative_ = 1e3;}//防止溢出
+    }
+    else
+    {
+        positive_or_negative_--;
+        if(positive_or_negative_ == INT_MIN){positive_or_negative_ = -1e3;}//防止溢出
+    }
+    thisSpeed.speed = fabs(thisSpeed.speed);
+
+    //判断大小能量机关
+    this->variance_buffer_.push(pow(thisSpeed.speed - 1.047,2));
+    this->variance_sum_ += variance_buffer_.back();
+    if(variance_buffer_.size() > VARIANCE_BUFFER_MAX)//防止溢出
+    {
+        this->variance_sum_ -= variance_buffer_.front();
+        variance_buffer_.pop();
+    }
+
+    if(thisSpeed.speed < 2.090 + 0.1 && thisSpeed.speed > 0.52 - 0.1)//2.09是最大转速
+    {
+        float a1,a2,b1,b2;
+        float sub,subs[4];
+        int minSubNum = 0;
+        float minSub = FLT_MAX;
+        sub = thisSpeed.timestamp - last_speed_.timestamp;
+        solveInverseTrigonometricFunction(thisSpeed.speed,a1,a2);
+        solveInverseTrigonometricFunction(last_speed_.speed,b1,b2);
+        subs[0] = fabs(a1 - b1 - sub);
+        subs[1] = fabs(a2 - b2 - sub);
+        subs[2] = fabs(a1 - b2 - sub);
+        subs[3] = fabs(a2 - b1 - sub);
+        for(int i = 0;i<3;i++)
+        {
+            if(subs[i] < minSub)
+            {
+                minSubNum = i;
+                minSub = subs[i];
+            }
+        }
+        switch(minSubNum)
+        {
+        case 0:t_inter_ = last_speed_.timestamp - a1;break;
+        case 1:t_inter_ = last_speed_.timestamp - a2;break;
+        case 2:t_inter_ = last_speed_.timestamp - a1;break;
+        case 3:t_inter_ = last_speed_.timestamp - a2;break;
+        }
+    }
+    else
+    {
+
+    }
+    last_speed_.speed = thisSpeed.speed;
+    last_speed_.timestamp = thisSpeed.timestamp;
+
+}
+void BuffModel::solveInverseTrigonometricFunction(float A,float &t1,float &t2)
+{
+    t1 = asin((A - 1.305) / 0.785) / 1.884;
+    if(t1 >=0)
+    {
+        t2 = 5.0f/3 - t1;
+    }
+    else
+    {
+        t2 = -5.0f/3 - t1;
+    }
+}
+float BuffModel::getFutureAngle(const long double interval)
+{
+    //delta_pos = 0.785 * -1 / 1.884 * [cos(1.884 * (t + timeInterval)) - cos(1.884 * t)] + 1.305 * timeInterval
+    float pos;
+    double t = last_angle_tick_.timestamp;
+
+    if(variance_sum_ > 10)
+    {
+        pos = last_angle_tick_.angle + 0.785 * -1 / 1.884 * (cos(1.884 * (t + interval)) - cos(1.884 * t));
+        if(positive_or_negative_ >= 0)
+        {
+            pos += 1.305 * interval;
+        }
+        else
+        {
+            pos -= 1.305 * interval;
+        }
+    }
+    else
+    {
+        pos = last_angle_tick_.angle;
+        if(positive_or_negative_ >= 0)
+        {
+            pos += 1.047 * interval;
+        }
+        else
+        {
+            pos -= 1.047 * interval;
+        }
+    }
+    while(pos > 2 * M_PI)
+    {
+        pos -= (2 * M_PI);
+    }
+    return pos;
+}
+

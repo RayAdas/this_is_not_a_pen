@@ -20,10 +20,9 @@ public:
                        cv::Size2f bigArmor);
     cv::Point2f PCoord2ICoord(cv::Point2f pixelPoint);
     cv::Point2f ICoord2CCoord(cv::Point2f imagePoint);
+    static cv::Point3f CCoord2ACoord(cv::Point3f cameraPoint,cv::Point2f axisData);
     cv::Point3f PNP(std::vector<cv::Point2f>&xy,bool SIZE,double &distance,float &yaw,float &pitch);
-
     void init_PNP();
-    static void pixel2what(cv::Point2f pixelPoint, float &angleX,float &angleY);
     const float length_per_pixel_;// = 4.8e-6;
     const float f_;// = 6.308e-03;
 

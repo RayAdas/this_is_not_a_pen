@@ -6,6 +6,7 @@
 #include "coordinateTransform/coordinateTransform.h"
 #include "targetModel/buff.h"
 #include "targetModel/robot.h"
+#include "trajectoryCalculation.h"
 
 class Controller
 {
@@ -23,7 +24,7 @@ private:
     TargetModel *armor_model_ = nullptr;
     TargetModel *active_model_ = nullptr;
 
-    axisData* axis_data_ = nullptr;
+    AxisData* axis_data_ = nullptr;
     TeamColor* enemy_color_ = nullptr;
     aimMod* aim_mode_ = nullptr;
 private:

@@ -3,7 +3,7 @@
 CriticalCore::CriticalCore()
 {
 }
-void CriticalCore::Init(AngleTick initialAngleTick)
+void CriticalCore::Init(const AngleTick initialAngleTick)
 {
     this->last_angle_tick_ = initialAngleTick;
     this->consecutive_times_ = 0;
@@ -15,7 +15,7 @@ void CriticalCore::Init(AngleTick initialAngleTick)
     this->variance_sum_ = 0;
 }
 
-void CriticalCore::amend(AngleTick thisAngleTick)
+void CriticalCore::amend(const AngleTick thisAngleTick)
 {
     float maxDeltaAngle;//如果大于这个角度，则认为发生跳变
     float DeltaAngle;
@@ -71,7 +71,7 @@ float CriticalCore::getMaxDeltaAngle(double timeInterval)
     //delta_pos = 0.785 * -1 / 1.884 * [cos(1.884 * (t + timeInterval)) - cos(1.884 * t)] + 1.305 * timeInterval
     float maxDeltaAngle;
     maxDeltaAngle = 0.785 / 0.942 * sin(0.942 * timeInterval) + 1.305 * timeInterval;
-    return maxDeltaAngle + 0.01;
+    return maxDeltaAngle + 0.1;
 }
 
 void CriticalCore::amendPhase(const AngleTick preAngleTick,const AngleTick afterAngleTick)
@@ -81,6 +81,18 @@ void CriticalCore::amendPhase(const AngleTick preAngleTick,const AngleTick after
     //算出本帧和上一帧间的速度
     thisSpeed.speed = (afterAngleTick.angle - preAngleTick.angle) / (afterAngleTick.timestamp - preAngleTick.timestamp);
     thisSpeed.timestamp = (afterAngleTick.timestamp + preAngleTick.timestamp) / 2;
+
+    /*调试用的
+    static cv::Mat img = cv::Mat::zeros(800,800,CV_8UC3);
+    static int i = 0;
+    static long double ss = 0;
+    ss += thisSpeed.speed;
+    std::cout<<thisSpeed.speed<<std::endl;
+    cv::circle(img,cv::Point2i(i,thisSpeed.speed * 100 + 400),1,cv::Scalar(255,255,255));
+    cv::imshow("img",img);
+    i++;
+    std::cout<<ss / i<<std::endl;
+    */
 
     //判断正反转并去除正反特性
     if(thisSpeed.speed > 0)

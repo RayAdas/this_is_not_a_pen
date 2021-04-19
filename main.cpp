@@ -34,15 +34,17 @@ using namespace cv;
 
 int main()
 {
+    TrajectoryCalculation::getElevation(2,0,5);
+
     //创建视频源
     VideoSource *VideoSource = VideoSourceUtility::sourceInit();
 
     //创建角度解算器
 
     cv::Mat cameraInternalParam = (cv::Mat_<double>(3,3) <<
-                                       644.531787 , 0 , 320 ,
-                                       0       , 642.090508 , 256 ,
-                                       0       , 0       , 1       );
+                                   644.531787 , 0 , 320 ,
+                                   0       , 642.090508 , 256 ,
+                                   0       , 0       , 1       );
     cv::Mat distortionParam = (cv::Mat_<double>(1,5) <<
                                -0.071912,0.078401,0.000264,-0.002826,0.113940);
 
@@ -94,9 +96,9 @@ int main()
         if(VideoSource->Init() == false)
         {
             cout<<"video source offline"<<endl;
-            cout<<"waitting to open video source..."<<endl;
-            while(! VideoSource->Init()){}//等待开启
-            cout<<"video source online"<<endl;
+            //cout<<"waitting to open video source..."<<endl;
+            //while(! VideoSource->Init()){}//等待开启
+            //cout<<"video source online"<<endl;
         }
         else
         {
