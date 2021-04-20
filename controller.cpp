@@ -71,7 +71,7 @@ void Controller::mainCycle()
             {
                 ImageData_p= video_source_->getImage();
             }
-            while(ImageData_p != lastImageData_p);//等待直到相机读入新数据
+            while(ImageData_p == lastImageData_p);//等待直到相机读入新数据
             lastImageData_p = ImageData_p;
             active_model_->amend(ImageData_p);
             */

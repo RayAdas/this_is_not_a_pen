@@ -70,7 +70,7 @@ cv::Point3f CoordinatTransform::PNP(std::vector<cv::Point2f>&xy,bool SIZE,double
     yaw = yaw * (180 / PI);
     pitch = pitch * (180 / PI);
 */
-    Point3f postion(X0/10,Y0/10,Z0/10);
+    cv::Point3f postion(X0/10,Y0/10,Z0/10);
     Transform(postion,yaw,pitch,10.5);
     return cv::Point3f(yaw,pitch,0);
     //return tvec;
