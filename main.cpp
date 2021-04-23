@@ -64,7 +64,8 @@ int main()
                                          bigArmor);
 
     //创建串口
-    char dev[]={"/dev/ttyTHS2"};
+    //char dev[]={"/dev/ttyTHS2"};
+    char dev[]={"/dev/ttyUSB0"};
     SerialPort Uart1(dev);
     UartKeeper *UKeeper;
 

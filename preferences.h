@@ -2,7 +2,7 @@
 #define PREFERENCES
 
 enum Robot_Type{Hero=1,Infantry=2,Guard=3,Drone=4};//兵种 1:英雄|2:步兵|3:哨兵|4:无人机
-enum TeamColor{teamColor_red = 0,teamColor_blue = 1};
+enum TeamColor{teamColor_red = 0,teamColor_blue = 2};
 
 
 const Robot_Type THIS_ROBOT_TYPE = Infantry;

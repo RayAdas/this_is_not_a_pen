@@ -40,39 +40,149 @@ void UartKeeper_Infantry::KeeperCycle()
 {
     while(true)
     {
-        if(Uart1->get_data())
-        {
-            switch(Uart1->receice_data_[2])
+        ssize_t readLength = Uart1->get_data(&(receive_data_buffer_[4096]),MAX_RECIEVE_LENGTH);
+        if(readLength <= 0)//啥也没读到
+        {continue;}
+
+        int p = MAX_RECIEVE_LENGTH - left_receice_data_buffer_end;
+        int p_end_plus_one = MAX_RECIEVE_LENGTH + readLength;
+
+        //注意，下文中所有的到头了，其中的i += 的数值均可减一，不影响流程执行,因为下一个循环开始会i++
+        for(int i = p;i<p_end_plus_one;i++)
+        {//遍历找AA
+            if(receive_data_buffer_[i] == 0xAA)
             {
-            case 0x01://普通自瞄申请
-                *(aim_mode_buffer_.Back) = robotMode;
-                aim_mode_buffer_.writeOver();
-                //cout<<"AimMod:robotMod"<<endl;
-                break;
-            case 0x02://大符自瞄申请
-                *(aim_mode_buffer_.Back) = buffMode;
-                aim_mode_buffer_.writeOver();
-                //cout<<"AimMod:buffMod"<<endl;
-                break;
-            case 0x03://禁止自瞄申请
-                *(aim_mode_buffer_.Back) = manualMode;
-                aim_mode_buffer_.writeOver();
-                //cout<<"AimMod:manualMode"<<endl;
-                break;
-            case 0x04:
-                axis_data_buffer_.Back->ProjectileVel = *((short*)&(Uart1->receice_data_[3]));
-                axis_data_buffer_.Back->RA_yaw = *((float*)&(Uart1->receice_data_[5]));
-                axis_data_buffer_.Back->RA_pitch = *((float*)&(Uart1->receice_data_[9]));
-                axis_data_buffer_.Back->AAV_yaw = *((float*)&(Uart1->receice_data_[13]));
-                axis_data_buffer_.Back->AAV_pitch = *((float*)&(Uart1->receice_data_[17]));
-                axis_data_buffer_.writeOver();
-                break;
-            case 0x07://角色反馈
-                *(enemy_color_buffer_.Back) = Uart1->receice_data_[3] == 0x00 ? teamColor_red : teamColor_blue;
-                enemy_color_buffer_.writeOver();
-                break;
-            default:return;
+                if(i + 1 < p_end_plus_one)
+                {//没到头
+                    if(receive_data_buffer_[i + 1] == 0xAA)
+                    {//连着两个AA
+                        if(i + 2 < p_end_plus_one)
+                        {
+                            switch(receive_data_buffer_[i + 2])
+                            {
+                            case 0x01://普通自瞄申请
+                                if(i + 3 < p_end_plus_one)
+                                {
+                                    if(receive_data_buffer_[i + 3] == 0xBB)
+                                    {
+                                        *(aim_mode_buffer_.Back) = robotMode;
+                                        aim_mode_buffer_.writeOver();
+                                        cout<<"AimMod:robotMod"<<endl;
+                                        i += 3;
+                                    }
+                                    else
+                                    {continue;}
+                                }
+                                else
+                                {//到头了
+                                    memcpy(&(receive_data_buffer_[4093]),&(receive_data_buffer_[i]),3);
+                                    left_receice_data_buffer_end = 3;
+                                    i += 3;
+                                }
+                                break;
+                            case 0x02://大符自瞄申请
+                                if(i + 3 < p_end_plus_one)
+                                {
+                                    if(receive_data_buffer_[i + 3] == 0xBB)
+                                    {
+                                        *(aim_mode_buffer_.Back) = buffMode;
+                                        aim_mode_buffer_.writeOver();
+                                        cout<<"AimMod:buffMod"<<endl;
+                                        i += 3;
+                                    }
+                                    else
+                                    {continue;}
+                                }
+                                else
+                                {
+                                    memcpy(&(receive_data_buffer_[4093]),&(receive_data_buffer_[i]),3);
+                                    left_receice_data_buffer_end = 3;
+                                    i += 3;
+                                }
+                                break;
+                            case 0x03://禁止自瞄申请
+                                if(i + 3 < p_end_plus_one)
+                                {
+                                    if(receive_data_buffer_[i + 3] == 0xBB)
+                                    {
+                                        *(aim_mode_buffer_.Back) = manualMode;
+                                        aim_mode_buffer_.writeOver();
+                                        cout<<"AimMod:manualMode"<<endl;
+                                        i += 3;
+                                    }
+                                    else
+                                    {continue;}
+                                }
+                                else
+                                {
+                                    memcpy(&(receive_data_buffer_[4093]),&(receive_data_buffer_[i]),3);
+                                    left_receice_data_buffer_end = 3;
+                                    i += 3;
+                                }
+                                break;
+                            case 0x04:
+                                if(i + 21 < p_end_plus_one)
+                                {
+                                    if(receive_data_buffer_[i + 21] == 0xBB)
+                                    {
+                                        axis_data_buffer_.Back->ProjectileVel = *((short*)&(receive_data_buffer_[i + 3]));
+                                        axis_data_buffer_.Back->RA_yaw = *((float*)&(receive_data_buffer_[i + 5]));
+                                        axis_data_buffer_.Back->RA_pitch = *((float*)&(receive_data_buffer_[i + 9]));
+                                        axis_data_buffer_.Back->AAV_yaw = *((float*)&(receive_data_buffer_[i + 13]));
+                                        axis_data_buffer_.Back->AAV_pitch = *((float*)&(receive_data_buffer_[i + 17]));
+                                        axis_data_buffer_.writeOver();
+                                        i += 21;
+                                    }
+                                    else
+                                    {continue;}
+                                }
+                                else
+                                {
+                                    memcpy(&(receive_data_buffer_[4096 - (p_end_plus_one - i)]),&(receive_data_buffer_[i]),(p_end_plus_one - i));
+                                    left_receice_data_buffer_end = p_end_plus_one - i;
+                                    i += (p_end_plus_one - i);
+                                }
+                                break;
+                            case 0x07://角色反馈
+                                if(i + 4 < p_end_plus_one)
+                                {
+                                    if(receive_data_buffer_[i + 4] == 0xBB)
+                                    {
+                                        *(enemy_color_buffer_.Back) = receive_data_buffer_[i + 3] == 0x00 ? teamColor_red : teamColor_blue;
+                                        enemy_color_buffer_.writeOver();
+                                        i += 4;
+                                    }
+                                    else
+                                    {continue;}
+                                }
+                                else
+                                {
+                                    memcpy(&(receive_data_buffer_[4096 - (p_end_plus_one - i)]),&(receive_data_buffer_[i]),(p_end_plus_one - i));
+                                    left_receice_data_buffer_end = p_end_plus_one - i;
+                                    i += (p_end_plus_one - i);
+                                }
+                                break;
+                            default:return;
+                            }
+                        }
+                        else
+                        {//到头了
+                            memcpy(&(receive_data_buffer_[4094]),&(receive_data_buffer_[i]),2);
+                            left_receice_data_buffer_end = 2;
+                            i += 2;
+                        }
+                    }
+                    else
+                    {continue;}
+                }
+                else
+                {//到头了
+                    memcpy(&(receive_data_buffer_[4095]),&(receive_data_buffer_[i]),1);
+                    left_receice_data_buffer_end = 1;
+                    i += 1;
+                }
             }
+            else{left_receice_data_buffer_end = 0;}
         }
     }
 }
@@ -144,16 +254,149 @@ void UartKeeper_Guard::KeeperCycle()
 {
     while(true)
     {
-        if(Uart1->get_data())
-        {
-            switch(Uart1->receice_data_[2])
+        ssize_t readLength = Uart1->get_data(&(receive_data_buffer_[4096]),MAX_RECIEVE_LENGTH);
+        if(readLength == 0)//啥也没读到
+        {continue;}
+
+        int p = MAX_RECIEVE_LENGTH - left_receice_data_buffer_end;
+        int p_end_plus_one = MAX_RECIEVE_LENGTH + readLength;
+
+        //注意，下文中所有的到头了，其中的i += 的数值均可减一，不影响流程执行,因为下一个循环开始会i++
+        for(int i = p;i<p_end_plus_one;i++)
+        {//遍历找AA
+            if(receive_data_buffer_[i] == 0xAA)
             {
-            case 0x07://角色反馈
-                *(enemy_color_buffer_.Back) = Uart1->receice_data_[3] == 0x00 ? teamColor_red : teamColor_blue;
-                enemy_color_buffer_.writeOver();
-                break;
-            default:return;
+                if(i + 1 < p_end_plus_one)
+                {//没到头
+                    if(receive_data_buffer_[i + 1] == 0xAA)
+                    {//连着两个AA
+                        if(i + 2 < p_end_plus_one)
+                        {
+                            switch(receive_data_buffer_[i + 2])
+                            {
+                            case 0x01://普通自瞄申请
+                                if(i + 3 < p_end_plus_one)
+                                {
+                                    if(receive_data_buffer_[i + 3] == 0xFF)
+                                    {
+                                        *(aim_mode_buffer_.Back) = robotMode;
+                                        aim_mode_buffer_.writeOver();
+                                        //cout<<"AimMod:robotMod"<<endl;
+                                        i += 3;
+                                    }
+                                    else
+                                    {continue;}
+                                }
+                                else
+                                {//到头了
+                                    memcpy(&(receive_data_buffer_[4093]),&(receive_data_buffer_[i]),3);
+                                    left_receice_data_buffer_end = 3;
+                                    i += 3;
+                                }
+                                break;
+                            case 0x02://大符自瞄申请
+                                if(i + 3 < p_end_plus_one)
+                                {
+                                    if(receive_data_buffer_[i + 3] == 0xFF)
+                                    {
+                                        *(aim_mode_buffer_.Back) = buffMode;
+                                        aim_mode_buffer_.writeOver();
+                                        //cout<<"AimMod:buffMod"<<endl;
+                                        i += 3;
+                                    }
+                                    else
+                                    {continue;}
+                                }
+                                else
+                                {
+                                    memcpy(&(receive_data_buffer_[4093]),&(receive_data_buffer_[i]),3);
+                                    left_receice_data_buffer_end = 3;
+                                    i += 3;
+                                }
+                                break;
+                            case 0x03://禁止自瞄申请
+                                if(i + 3 < p_end_plus_one)
+                                {
+                                    if(receive_data_buffer_[i + 3] == 0xFF)
+                                    {
+                                        *(aim_mode_buffer_.Back) = manualMode;
+                                        aim_mode_buffer_.writeOver();
+                                        //cout<<"AimMod:manualMode"<<endl;
+                                        i += 3;
+                                    }
+                                    else
+                                    {continue;}
+                                }
+                                else
+                                {
+                                    memcpy(&(receive_data_buffer_[4093]),&(receive_data_buffer_[i]),3);
+                                    left_receice_data_buffer_end = 3;
+                                    i += 3;
+                                }
+                                break;
+                            case 0x04:
+                                if(i + 21 < p_end_plus_one)
+                                {
+                                    if(receive_data_buffer_[i + 21] == 0xFF)
+                                    {
+                                        axis_data_buffer_.Back->ProjectileVel = *((short*)&(receive_data_buffer_[i + 3]));
+                                        axis_data_buffer_.Back->RA_yaw = *((float*)&(receive_data_buffer_[i + 5]));
+                                        axis_data_buffer_.Back->RA_pitch = *((float*)&(receive_data_buffer_[i + 9]));
+                                        axis_data_buffer_.Back->AAV_yaw = *((float*)&(receive_data_buffer_[i + 13]));
+                                        axis_data_buffer_.Back->AAV_pitch = *((float*)&(receive_data_buffer_[i + 17]));
+                                        axis_data_buffer_.writeOver();
+                                        i += 21;
+                                    }
+                                    else
+                                    {continue;}
+                                }
+                                else
+                                {
+                                    memcpy(&(receive_data_buffer_[4096 - (p_end_plus_one - i)]),&(receive_data_buffer_[i]),(p_end_plus_one - i));
+                                    left_receice_data_buffer_end = p_end_plus_one - i;
+                                    i += (p_end_plus_one - i);
+                                }
+                                break;
+                            case 0x07://角色反馈
+                                if(i + 4 < p_end_plus_one)
+                                {
+                                    if(receive_data_buffer_[i + 4] == 0xFF)
+                                    {
+                                        *(enemy_color_buffer_.Back) = receive_data_buffer_[i + 3] == 0x00 ? teamColor_red : teamColor_blue;
+                                        enemy_color_buffer_.writeOver();
+                                        i += 4;
+                                    }
+                                    else
+                                    {continue;}
+                                }
+                                else
+                                {
+                                    memcpy(&(receive_data_buffer_[4096 - (p_end_plus_one - i)]),&(receive_data_buffer_[i]),(p_end_plus_one - i));
+                                    left_receice_data_buffer_end = p_end_plus_one - i;
+                                    i += (p_end_plus_one - i);
+                                }
+                                break;
+                            default:return;
+                            }
+                        }
+                        else
+                        {//到头了
+                            memcpy(&(receive_data_buffer_[4094]),&(receive_data_buffer_[i]),2);
+                            left_receice_data_buffer_end = 2;
+                            i += 2;
+                        }
+                    }
+                    else
+                    {continue;}
+                }
+                else
+                {//到头了
+                    memcpy(&(receive_data_buffer_[4095]),&(receive_data_buffer_[i]),1);
+                    left_receice_data_buffer_end = 1;
+                    i += 1;
+                }
             }
+            else{left_receice_data_buffer_end = 0;}
         }
     }
 }

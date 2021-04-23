@@ -61,7 +61,6 @@ SOURCES += \
     videoSource/galaxycamera.cpp \
     videoSource/videosource.cpp \
 
-
 HEADERS += \
     serialPort/serialPort.h \
     coordinateTransform/coordinateTransform.h \

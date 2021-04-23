@@ -46,8 +46,6 @@ bool SerialPort::Init()
     port_settings.c_lflag = 0;                // no signaling chars, no echo,
     // no canonical processing
     port_settings.c_oflag = 0;                // no remapping, no delays
-    port_settings.c_cc[VMIN]  = 0;            // read doesn't block
-    port_settings.c_cc[VTIME] = 5;            // 0.5 seconds read timeout
 
     port_settings.c_iflag &= ~(IXON | IXOFF | IXANY); // shut off xon/xoff ctrl
 
@@ -58,8 +56,8 @@ bool SerialPort::Init()
     port_settings.c_cflag &= ~CSTOPB;
     port_settings.c_cflag &= ~CRTSCTS;
     port_settings.c_iflag = ICANON;
-    port_settings.c_cc[VMIN] = 10;           // read doesn't block
-    port_settings.c_cc[VTIME] = 5;          // 0.5 seconds read timeout
+    port_settings.c_cc[VMIN] = 0;           // read doesn't block
+    port_settings.c_cc[VTIME] = 0;          // 0.5 seconds read timeout
 
     tcsetattr(fd, TCSANOW, &port_settings);             // apply the settings to the port
     return true;
@@ -69,11 +67,15 @@ void SerialPort::send_data(const unsigned char* data,const int length)
 {
     write(fd,data,length);
 }
-bool SerialPort:: get_data()
+ssize_t SerialPort::get_data(unsigned char* r,const int maxLength)
 {
-    static unsigned char r[22];
-    tcflush(fd,TCIFLUSH);
     read(fd,&r,sizeof(r));
+    ssize_t readLength = read(fd,r,maxLength);
+
+    if(readLength > 0)
+    {
+        //cout<<"?"<<readLength<<endl;
+    }
 /*
     for(int i=0;i<22;i++)
     {
@@ -81,11 +83,12 @@ bool SerialPort:: get_data()
     }
     printf("\n");
 */
-    if(r[0]==0xAA && r[1]==0xAA)
+    if(readLength > 0)
     {
-        memcpy(receice_data_,r,sizeof(r));
-        return 1;
+        return readLength;
     }
-
-    return 0;
+    else
+    {
+        return 0;
+    }
 }

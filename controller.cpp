@@ -32,6 +32,7 @@ void Controller::mainCycle()
         uart1_keeper_->read(axis_data_,enemy_color_,aim_mode_);
         buff_model_->setEnemyColor(*enemy_color_);
         armor_model_->setEnemyColor(*enemy_color_);
+/*
         if(*aim_mode_ == buffMode)
         {
             active_model_ = buff_model_;
@@ -65,16 +66,16 @@ void Controller::mainCycle()
                 uart1_keeper_->set(&ZERO_SIX,AOrR);//有可能设置反了，需要确认一下
             }
 
-            /*
-            ImageData* ImageData_p;
-            do
-            {
-                ImageData_p= video_source_->getImage();
-            }
-            while(ImageData_p == lastImageData_p);//等待直到相机读入新数据
-            lastImageData_p = ImageData_p;
-            active_model_->amend(ImageData_p);
-            */
+
+            //ImageData* ImageData_p;
+            //do
+            //{
+            //    ImageData_p= video_source_->getImage();
+            //}
+            //while(ImageData_p == lastImageData_p);//等待直到相机读入新数据
+            //lastImageData_p = ImageData_p;
+            //active_model_->amend(ImageData_p);
+
 
             vc >> imgd.SrcImage;
             cv::resize(imgd.SrcImage,imgd.SrcImage,cv::Size2i(640,512));
@@ -119,5 +120,6 @@ void Controller::mainCycle()
         tm.stop();
         //cout<<"time:"<<tm.getTimeMilli()<<endl;
         tm.reset();
+*/
     }
 }

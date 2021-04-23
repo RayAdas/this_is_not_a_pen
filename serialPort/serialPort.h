@@ -16,8 +16,7 @@ public:
     SerialPort(const char* filename);
     bool Init();//1 = success
     void send_data(const unsigned char* data,const int length);
-    bool get_data();//1:success
-    unsigned char receice_data_[22];
+    ssize_t get_data(unsigned char* r,const int maxLength);
 private:
     char fd;
     const char* file_name_;

@@ -4,7 +4,7 @@
 #include "tool/triplebuffering.h"
 #include <thread>
 #include "preferences.h"
-
+#define MAX_RECIEVE_LENGTH 4096
 enum DataLabel{YawAngle,PitchAngle,FirePermit,AOrR,YunTaiMode};//A0rR用于指示相对角和绝对角//YunTaiMode云台模式
 
 struct AxisData
@@ -31,6 +31,9 @@ protected:
     int sent_length_;
     std::thread keeper_thread_;
     SerialPort* Uart1 = nullptr;
+    unsigned char receive_data_buffer_[MAX_RECIEVE_LENGTH * 2];//前4096是上一条读剩下的
+    int left_receice_data_buffer_end = 0;//上一条读剩下的个数
+
     TripleBuffering<AxisData> axis_data_buffer_;
     TripleBuffering<TeamColor> enemy_color_buffer_;
     TripleBuffering<aimMod> aim_mode_buffer_;
