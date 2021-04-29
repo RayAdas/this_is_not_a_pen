@@ -10,7 +10,7 @@ class TargetModel
 public:
     TargetModel();
     virtual void amend(ImageData* imageData) = 0;//修正预测模型
-    virtual void amend(AxisData* axisData) = 0;//修正预测模型
+    virtual void amend(cv::Point2f* axisData) = 0;//修正预测模型
     void setEnemyColor(TeamColor enemy_color_);
     virtual cv::Point3f getFuturePosition(const float offset) = 0;//获得预测点
 protected:

@@ -24,7 +24,7 @@
 #include "controller.h"
 #include "tool/kalman.h"
 #include "trajectoryCalculation.h"
-#include "videoSource/galaxycamera.h"
+//#include "videoSource/galaxycamera.h"
 
 using namespace Dahua::GenICam;
 using namespace Dahua::Infra;
@@ -64,8 +64,8 @@ int main()
                                          bigArmor);
 
     //创建串口
-    //char dev[]={"/dev/ttyTHS2"};
-    char dev[]={"/dev/ttyUSB0"};
+    char dev[]={"/dev/ttyTHS2"};
+    //char dev[]={"/dev/ttyUSB0"};
     SerialPort Uart1(dev);
     UartKeeper *UKeeper;
 

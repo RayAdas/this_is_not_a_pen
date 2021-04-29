@@ -3,7 +3,7 @@
 CoordinatTransform::CoordinatTransform(cv::Mat cameraInternalParam,
                                        cv::Mat distortionParam,
                                        cv::Size2f smallArmor,
-                                       cv::Size2f bigArmor):f_(6.308e-03),length_per_pixel_(4.8e-6)
+                                       cv::Size2f bigArmor):f_(6.308e-03),length_per_pixel_(9.6e-6)
 {
     this->camera_internal_param_ = cameraInternalParam;
     this->distortion_param_ = distortionParam;
@@ -58,7 +58,8 @@ cv::Point3f CoordinatTransform::PNP(std::vector<cv::Point2f>&xy,bool SIZE,double
     double Y0=tvec.at<double>(0,1);                                             //Y轴上世界coordinate相对摄像头coordinate的平移
     double Z0=tvec.at<double>(0,2);                                             //z轴上世界coordinate相对摄像头coordinate的平移
     distance=sqrt(X0*X0+Y0*Y0+Z0*Z0);
-    cout<<tvec<<endl;
+    //cout<<"tvec"<<tvec<<endl;
+    //cout<<tvec<<endl;
     //this position need more accuraciation
     //plz ask me for more information and decision,thx
 
@@ -72,8 +73,8 @@ cv::Point3f CoordinatTransform::PNP(std::vector<cv::Point2f>&xy,bool SIZE,double
 */
     cv::Point3f postion(X0/10,Y0/10,Z0/10);
     Transform(postion,yaw,pitch,10.5);
-    return cv::Point3f(yaw,pitch,0);
-    //return tvec;
+    Y0 *= -1;
+    return cv::Point3f(X0,Y0,Z0);
 }
 
 void CoordinatTransform::Init(float x,float y,float z,float pitch,float yaw, float init_v, float init_k) {

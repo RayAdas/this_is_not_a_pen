@@ -27,7 +27,7 @@
 #define RATIO_OF_R_WIDTH 3.0
 #define MIN_ACCEPTABLE_ARROMOR_SUB_AREA 100//最小的可接受的大装甲板子区域面积
 
-#define BUFF_CENTER_DISTANCE 6.4
+#define BUFF_CENTER_DISTANCE 7
 #define BUFF_CENTER_HEIGHT 0.97
 #define BUFF_CENTER_RADIUS 0.7
 
@@ -82,7 +82,7 @@ public:
     BuffModel(CoordinatTransform* coordinatTransform);
     ~BuffModel();
     void amend(ImageData* imageData) override;//修正预测模型
-    void amend(AxisData* axisData) override;//修正预测模型
+    void amend(cv::Point2f* axisData) override;//修正预测模型
     cv::Point3f getFuturePosition(const float offset) override;//获得预测点
 private:
     cv::Point2f getCameraCurrentDirection();

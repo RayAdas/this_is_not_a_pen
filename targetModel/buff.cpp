@@ -1,5 +1,5 @@
 #include "buff.h"
-#define VISUAL//开启可视化显示
+//#define VISUAL//开启可视化显示
 BuffTick BuffTickUtility::Mat2buffTick(const cv::Mat &src,TeamColor enemyColor)
 {
 
@@ -10,6 +10,9 @@ BuffTick BuffTickUtility::Mat2buffTick(const cv::Mat &src,TeamColor enemyColor)
 #ifdef VISUAL
     cv::Mat visual;
     src.copyTo(visual);
+    cv::line(visual,cv::Point2i(0,256),cv::Point2f(640,256),cv::Scalar(255,255,255));
+    cv::line(visual,cv::Point2i(320,0),cv::Point2f(320,512),cv::Scalar(255,255,255));
+    //cv::imshow("src",visual);
 #endif
     BuffTickUtility::preprocess(src,dst,enemyColor);//预处理
 #ifdef VISUAL
@@ -373,7 +376,7 @@ void BuffModel::amend(ImageData* imageData)//修正预测模型
     }
     else
     {
-        initAngle(A);
+        amendAngle(A);
     }
 
 }
@@ -401,13 +404,16 @@ cv::Point2f BuffModel::getCameraCurrentDirection()
 {
     cv::Point2f d;
     d = coordinat_transform_->ICoord2CCoord(coordinat_transform_->PCoord2ICoord(last_buff_tick_.center));
+    d.x *= -1;
+    d.y *= -1;
+    d.y += atan(BUFF_CENTER_HEIGHT / BUFF_CENTER_DISTANCE);
     return d;
 }
-void BuffModel::amend(AxisData* axisData)//buff不使用外部陀螺仪数据修正预测模型
+void BuffModel::amend(cv::Point2f* axisData)//buff不使用外部陀螺仪数据修正预测模型
 {
     cv::Point2f cameraCurrentDirection = getCameraCurrentDirection();
-    axisData->RA_yaw = cameraCurrentDirection.x;
-    axisData->RA_pitch = cameraCurrentDirection.y;
+    axisData->x = cameraCurrentDirection.x;
+    axisData->y = cameraCurrentDirection.y;
 }
 
 /*=======预测部份=======*/

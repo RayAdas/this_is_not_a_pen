@@ -60,6 +60,7 @@ bool SerialPort::Init()
     port_settings.c_cc[VTIME] = 0;          // 0.5 seconds read timeout
 
     tcsetattr(fd, TCSANOW, &port_settings);             // apply the settings to the port
+    tcflush(fd, TCIOFLUSH);
     return true;
 }
 

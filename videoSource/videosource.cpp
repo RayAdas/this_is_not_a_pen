@@ -41,9 +41,9 @@ bool CameraVideoSource::Init()
     {
         return 0;
     }
-    //CAMERA.SetExposeTime(5500);//设置曝光时间
-    //CAMERA.setFrameRate(210);//设置帧率
-    //CAMERA.setBalanceRatio(1.55,1.00,1.51);
+    CAMERA.SetExposeTime(2000);//设置曝光时间
+    CAMERA.setFrameRate(210);//设置帧率
+    CAMERA.setBalanceRatio(1.55,1.00,1.51);
 
 
     return 1;

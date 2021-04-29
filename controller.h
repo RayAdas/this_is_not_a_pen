@@ -24,7 +24,8 @@ private:
     TargetModel *armor_model_ = nullptr;
     TargetModel *active_model_ = nullptr;
 
-    AxisData* axis_data_ = nullptr;
+    cv::Point2f axis_data_;
+    float projectile_vel_;
     TeamColor* enemy_color_ = nullptr;
     aimMod* aim_mode_ = nullptr;
 private:

@@ -5,7 +5,7 @@
 #include <thread>
 #include <sys/time.h>
 #include "tool/triplebuffering.h"
-#include "videoSource/galaxycamera.h"
+//#include "videoSource/galaxycamera.h"
 struct ImageData//图像信息
 {
     cv::Mat SrcImage;//图像Mat
@@ -35,7 +35,7 @@ public:
     ImageData* getImage() override;
 public:
     //camera CAMERA;//摄像头对象
-    GalaxyCamera CAMERA;
+    Camera CAMERA;
 private:
     void cameraGrabImageCycle();
 private:

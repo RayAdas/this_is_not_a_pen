@@ -3,18 +3,18 @@
 UartKeeper_Infantry::UartKeeper_Infantry(SerialPort* uart1)
 {
     this->Uart1 = uart1;
-    /*
+
     *(this->aim_mode_buffer_.Back) = manualMode;
     this->aim_mode_buffer_.writeOver();
     *(this->aim_mode_buffer_.Back) = manualMode;
+    this->aim_mode_buffer_.writeOver();
+
+    /*
+    *(this->aim_mode_buffer_.Back) = buffMode;
+    this->aim_mode_buffer_.writeOver();
+    *(this->aim_mode_buffer_.Back) = buffMode;
     this->aim_mode_buffer_.writeOver();
     */
-
-    *(this->aim_mode_buffer_.Back) = buffMode;
-    this->aim_mode_buffer_.writeOver();
-    *(this->aim_mode_buffer_.Back) = buffMode;
-    this->aim_mode_buffer_.writeOver();
-
     /*
     *(this->aim_mode_buffer_.Back) = robotMode;
     this->aim_mode_buffer_.writeOver();
@@ -25,6 +25,7 @@ UartKeeper_Infantry::UartKeeper_Infantry(SerialPort* uart1)
     this->enemy_color_buffer_.writeOver();
     *(this->enemy_color_buffer_.Back) = teamColor_red;
     this->enemy_color_buffer_.writeOver();
+
     sent_length_ = 13;
     this->S_DATA[0] = 0xAA;
     this->S_DATA[1] = 0xAA;
@@ -43,6 +44,12 @@ void UartKeeper_Infantry::KeeperCycle()
         ssize_t readLength = Uart1->get_data(&(receive_data_buffer_[4096]),MAX_RECIEVE_LENGTH);
         if(readLength <= 0)//啥也没读到
         {continue;}
+
+        for(int i=0;i<readLength;i++)
+        {
+            //printf("%x|",receive_data_buffer_[i+4096]);
+        }
+        //printf("\n");
 
         int p = MAX_RECIEVE_LENGTH - left_receice_data_buffer_end;
         int p_end_plus_one = MAX_RECIEVE_LENGTH + readLength;
@@ -67,7 +74,7 @@ void UartKeeper_Infantry::KeeperCycle()
                                     {
                                         *(aim_mode_buffer_.Back) = robotMode;
                                         aim_mode_buffer_.writeOver();
-                                        cout<<"AimMod:robotMod"<<endl;
+                                        //cout<<"AimMod:robotMod"<<endl;
                                         i += 3;
                                     }
                                     else
@@ -87,7 +94,7 @@ void UartKeeper_Infantry::KeeperCycle()
                                     {
                                         *(aim_mode_buffer_.Back) = buffMode;
                                         aim_mode_buffer_.writeOver();
-                                        cout<<"AimMod:buffMod"<<endl;
+                                        //cout<<"AimMod:buffMod"<<endl;
                                         i += 3;
                                     }
                                     else
@@ -107,7 +114,7 @@ void UartKeeper_Infantry::KeeperCycle()
                                     {
                                         *(aim_mode_buffer_.Back) = manualMode;
                                         aim_mode_buffer_.writeOver();
-                                        cout<<"AimMod:manualMode"<<endl;
+                                        //cout<<"AimMod:manualMode"<<endl;
                                         i += 3;
                                     }
                                     else
@@ -121,17 +128,24 @@ void UartKeeper_Infantry::KeeperCycle()
                                 }
                                 break;
                             case 0x04:
-                                if(i + 21 < p_end_plus_one)
+                                if(i + 23 < p_end_plus_one)
                                 {
-                                    if(receive_data_buffer_[i + 21] == 0xBB)
+                                    if(receive_data_buffer_[i + 23] == 0xBB)
                                     {
-                                        axis_data_buffer_.Back->ProjectileVel = *((short*)&(receive_data_buffer_[i + 3]));
-                                        axis_data_buffer_.Back->RA_yaw = *((float*)&(receive_data_buffer_[i + 5]));
-                                        axis_data_buffer_.Back->RA_pitch = *((float*)&(receive_data_buffer_[i + 9]));
-                                        axis_data_buffer_.Back->AAV_yaw = *((float*)&(receive_data_buffer_[i + 13]));
-                                        axis_data_buffer_.Back->AAV_pitch = *((float*)&(receive_data_buffer_[i + 17]));
-                                        axis_data_buffer_.writeOver();
-                                        i += 21;
+                                        /*
+                                        axis_data_buffer_.Back->ProjectileVel = *((float*)&(receive_data_buffer_[i + 3]));
+                                        axis_data_buffer_.Back->RA_yaw = *((float*)&(receive_data_buffer_[i + 7]));
+                                        axis_data_buffer_.Back->RA_pitch = *((float*)&(receive_data_buffer_[i + 11]));
+                                        axis_data_buffer_.Back->AAV_yaw = *((float*)&(receive_data_buffer_[i + 15]));
+                                        axis_data_buffer_.Back->AAV_pitch = *((float*)&(receive_data_buffer_[i + 19]));
+                                        */
+                                        axis_data_buffer_.x = *((float*)&(receive_data_buffer_[i + 7]));
+                                        axis_data_buffer_.y = *((float*)&(receive_data_buffer_[i + 11]));
+                                        axis_data_buffer_.x = axis_data_buffer_.x * M_PI / 180;
+                                        axis_data_buffer_.y = axis_data_buffer_.y * M_PI / 180 * -1;
+                                        projectile_vel_buffer_ = *((float*)&(receive_data_buffer_[i + 3]));
+                                        //cout<<"RA:"<<axis_data_buffer_.Back->RA_yaw<<"||"<<axis_data_buffer_.Back->RA_pitch<<endl;
+                                        i += 23;
                                     }
                                     else
                                     {continue;}
@@ -187,16 +201,18 @@ void UartKeeper_Infantry::KeeperCycle()
     }
 }
 
-void UartKeeper_Infantry::read(AxisData* &axisData,TeamColor* &EnemyColor,aimMod* &AimMod)
+void UartKeeper_Infantry::read(cv::Point2f* axisData,TeamColor* &EnemyColor,aimMod* &AimMod,float* ProjectileVel)
 {
-    axisData = axis_data_buffer_.read();
+    *axisData = axis_data_buffer_;
+    *ProjectileVel = projectile_vel_buffer_;
+    //cout<<axisData->RA_yaw<<"||"<<axisData->RA_pitch<<endl;
     EnemyColor = enemy_color_buffer_.read();
     AimMod = aim_mode_buffer_.read();
 }
 
 void UartKeeper_Infantry::write()
 {
-    this->Uart1->send_data(this->S_DATA,this->sent_length_);
+        this->Uart1->send_data(this->S_DATA,this->sent_length_);
 }
 void UartKeeper_Infantry::set(const void* data,DataLabel label)
 {
@@ -231,7 +247,7 @@ void UartKeeper_Guard::boot(void)
 {
     keeper_thread_ = std::thread(&UartKeeper_Guard::KeeperCycle,this);
 }
-void UartKeeper_Guard::read(AxisData* &axisData,TeamColor* &EnemyColor,aimMod* &AimMod)
+void UartKeeper_Guard::read(cv::Point2f* axisData,TeamColor* &EnemyColor,aimMod* &AimMod,float* ProjectileVel)
 {
     axisData = nullptr;
     EnemyColor = enemy_color_buffer_.read();
@@ -335,17 +351,21 @@ void UartKeeper_Guard::KeeperCycle()
                                 }
                                 break;
                             case 0x04:
-                                if(i + 21 < p_end_plus_one)
+                                if(i + 23 < p_end_plus_one)
                                 {
-                                    if(receive_data_buffer_[i + 21] == 0xFF)
+                                    if(receive_data_buffer_[i + 23] == 0xFF)
                                     {
-                                        axis_data_buffer_.Back->ProjectileVel = *((short*)&(receive_data_buffer_[i + 3]));
-                                        axis_data_buffer_.Back->RA_yaw = *((float*)&(receive_data_buffer_[i + 5]));
-                                        axis_data_buffer_.Back->RA_pitch = *((float*)&(receive_data_buffer_[i + 9]));
-                                        axis_data_buffer_.Back->AAV_yaw = *((float*)&(receive_data_buffer_[i + 13]));
-                                        axis_data_buffer_.Back->AAV_pitch = *((float*)&(receive_data_buffer_[i + 17]));
-                                        axis_data_buffer_.writeOver();
-                                        i += 21;
+                                        /*
+                                        axis_data_buffer_.Back->ProjectileVel = *((float*)&(receive_data_buffer_[i + 3]));
+                                        axis_data_buffer_.Back->RA_yaw = *((float*)&(receive_data_buffer_[i + 7]));
+                                        axis_data_buffer_.Back->RA_pitch = *((float*)&(receive_data_buffer_[i + 11]));
+                                        axis_data_buffer_.Back->AAV_yaw = *((float*)&(receive_data_buffer_[i + 15]));
+                                        axis_data_buffer_.Back->AAV_pitch = *((float*)&(receive_data_buffer_[i + 19]));
+                                        */
+                                        axis_data_buffer_.x = *((float*)&(receive_data_buffer_[i + 7]));
+                                        axis_data_buffer_.y = *((float*)&(receive_data_buffer_[i + 11]));
+                                        projectile_vel_buffer_ = *((float*)&(receive_data_buffer_[i + 3]));
+                                        i += 23;
                                     }
                                     else
                                     {continue;}

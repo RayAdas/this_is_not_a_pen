@@ -2,8 +2,8 @@
 #include"coordinateTransform/coordinateTransform.h"
 #include <math.h>
 
-#define VISUAL_ROBOT
-#define DRAW_PICTURE
+//#define VISUAL_ROBOT
+//#define DRAW_PICTURE
 //#define SHOW_PNP_DATA
 //#define SHOW_SELECTED_DATA
 //#define SHOW_RETURN_DATA
@@ -702,6 +702,10 @@ Point3f ArmorModel::GetArmorCenter()
         //tvec.x += last_axis_data_.RA_yaw
 
         cv::Point3f axisPoint = CoordinatTransform::CCoord2ACoord(tvec,last_axis_data_);
+        axisPoint.x *= 1e-3;
+        axisPoint.y *= 1e-3;
+        axisPoint.z *= 1e-3;
+
         return axisPoint;
     }
     else
@@ -768,10 +772,10 @@ double ArmorModel::Distance(Point2f a, Point2f b)
 
      len=leftLength > rightlength ? leftLength : rightlength;
  }
- void ArmorModel::amend(AxisData* axisData)//修正预测模型
+ void ArmorModel::amend(cv::Point2f* axisData)//修正预测模型
  {
-     last_axis_data_.x = axisData->RA_yaw;
-     last_axis_data_.y = axisData->RA_pitch;
+     last_axis_data_.x = axisData->x;
+     last_axis_data_.y = 0;
  }
 
 

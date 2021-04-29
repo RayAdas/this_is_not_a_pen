@@ -23,7 +23,7 @@ public:
     static cv::Point3f CCoord2ACoord(cv::Point3f cameraPoint,cv::Point2f axisData);
     cv::Point3f PNP(std::vector<cv::Point2f>&xy,bool SIZE,double &distance,float &yaw,float &pitch);
     void init_PNP();
-    const float length_per_pixel_;// = 4.8e-6;
+    const float length_per_pixel_;// = 9.6e-6;
     const float f_;// = 6.308e-03;
 
 
