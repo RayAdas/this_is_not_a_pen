@@ -13,8 +13,8 @@ LIBS += /usr/lib/libopencv_imgproc.so \
         /usr/lib/libopencv_videoio.so \
         /usr/lib/libopencv_calib3d.so \
         /usr/lib/libopencv_ml.so \
-        /usr/lib/aarch64-linux-gnu/libpthread.so \
-        #/usr/lib/x86_64-linux-gnu/libpthread.so \
+        #/usr/lib/aarch64-linux-gnu/libpthread.so \
+        /usr/lib/x86_64-linux-gnu/libpthread.so \
 
 INCLUDEPATH+=/opt/GALAXY
 INCLUDEPATH += /opt/DahuaTech/DependsInclude/Include

@@ -10,6 +10,7 @@
 #include <math.h>
 #include "tool/tool.h"
 #include <limits.h>
+#include <iomanip>
 #include "targetModel/targetModel.h"
 #include <stdlib.h>//test
 #include <trajectoryCalculation.h>
@@ -22,17 +23,17 @@
 #define subThreMinBule 65
 #define subThreMaxBule 255
 
-#define MIN_ACCEPTABLE_ARROMOR_AREA 1000//最小的可接受的大装甲板面积
+#define MIN_ACCEPTABLE_ARROMOR_AREA 300//最小的可接受的大装甲板面积
 
 #define RATIO_OF_R_WIDTH 3.0
-#define MIN_ACCEPTABLE_ARROMOR_SUB_AREA 100//最小的可接受的大装甲板子区域面积
+#define MIN_ACCEPTABLE_ARROMOR_SUB_AREA 200//最小的可接受的大装甲板子区域面积
 
 #define BUFF_CENTER_DISTANCE 7
 #define BUFF_CENTER_HEIGHT 0.97
 #define BUFF_CENTER_RADIUS 0.7
 
 #define CREDIBLE_CONSECUTIVE_TIMES 3
-#define VARIANCE_BUFFER_MAX 300
+#define VARIANCE_BUFFER_MAX 200
 
 enum ArromorLightEnum{off,target,complete};
 struct ArmorTick
@@ -46,7 +47,7 @@ struct ArmorTick
 
 struct BuffTick
 {
-    timeval timestamp;//时间戳
+    double timestamp;//时间戳
     cv::Point2f center = cv::Point2f(0,0);//Buff中心点
     float angle = -1;//取与x轴的最小正夹角
     float radius;//半径

@@ -60,9 +60,9 @@ void CameraVideoSource::cameraGrabImageCycle()
     while(true)
     {
         timeval NowTimmer;
-        gettimeofday(&NowTimmer,0);
         CAMERA.IGetFrame(ImageBuffer.Back->SrcImage);
-        ImageBuffer.Back->timestamp = NowTimmer;
+        gettimeofday(&NowTimmer,nullptr);
+        ImageBuffer.Back->timestamp = NowTimmer.tv_sec + 1e-6 * NowTimmer.tv_usec;
         ImageBuffer.writeOver();
     }
 }

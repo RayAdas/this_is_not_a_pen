@@ -104,7 +104,7 @@ bool Camera::IGetFrame(cv::Mat &src)
     int framewidth=frame.getImageWidth();
     int frameheight=frame.getImageHeight();
     cv::Mat image=cv::Mat(frameheight,framewidth,CV_8UC3,frameBGRPtr);
-    resize(image,src,image_size_);
+    cv::resize(image,src,image_size_);
     delete[] frameBGRPtr;
     return true;
 }

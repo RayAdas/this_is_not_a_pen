@@ -9,7 +9,7 @@
 struct ImageData//图像信息
 {
     cv::Mat SrcImage;//图像Mat
-    timeval timestamp;//时间戳
+    double timestamp;//时间戳
 };
 
 class VideoSource

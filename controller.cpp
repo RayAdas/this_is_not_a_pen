@@ -23,9 +23,9 @@ void Controller::mainCycle()
     cv::TickMeter tm;
 
     ImageData imgd;
-    cv::VideoCapture vc("/home/awaki/Videos/red.avi");
+    //cv::VideoCapture vc("/home/awaki/Videos/red.avi");
     //cv::VideoCapture vc("/home/awaki/Videos/Video_2021_01_18_133731_1.avi");
-
+    cv::VideoCapture vc("/home/awaki/Videos/Video_2021_05_02_005441_1.avi");
     while(true)
     {
         tm.start();
@@ -53,12 +53,12 @@ void Controller::mainCycle()
 
         uart1_keeper_->set(&ZERO_FIVE,AOrR);
 
-        *aim_mode_ = robotMode;
-        active_model_ = armor_model_;
+        *aim_mode_ = buffMode;
+        active_model_ = buff_model_;
         if(*aim_mode_ != manualMode)
         {
             //cout<<"vel:"<<axis_data_->ProjectileVel<<endl;
-            cout<<"RA:"<<axis_data_.x<<"||"<<axis_data_.y<<endl;
+            //cout<<"RA:"<<axis_data_.x<<"||"<<axis_data_.y<<endl;
             axis_data_.x = 0;
             cv::Point3f target;
             cv::Point2f gimbal(0,0);
@@ -84,13 +84,13 @@ void Controller::mainCycle()
             active_model_->amend(ImageData_p);
 
 
-            //vc >> imgd.SrcImage;
-            //cv::resize(imgd.SrcImage,imgd.SrcImage,cv::Size2i(640,512));
-            //active_model_->amend(&imgd);
+//            vc >> imgd.SrcImage;
+//            cv::resize(imgd.SrcImage,imgd.SrcImage,cv::Size2i(640,512));
+//            active_model_->amend(&imgd);
 
             active_model_->amend(&axis_data_);
             target = active_model_->getFuturePosition(0);
-            cout<<target<<endl;
+            //cout<<target<<endl;
             if(target.x == -1 || target.y == -1 || target.z == -1)
             {//没找到
                 float fz = 0;
@@ -118,7 +118,7 @@ void Controller::mainCycle()
                 gimbal.x -= 0.8;
                 gimbal.y += 1.0;
 
-                cout<<gimbal.x<<"||"<<gimbal.y<<endl;
+                //cout<<gimbal.x<<"||"<<gimbal.y<<endl;
 
                 gimbal.x *= -1;
                 gimbal.y *= -1;

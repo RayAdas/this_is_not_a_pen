@@ -1,14 +1,14 @@
 #include "buff.h"
-//#define VISUAL//开启可视化显示
+#define VISUAL//开启可视化显示
 BuffTick BuffTickUtility::Mat2buffTick(const cv::Mat &src,TeamColor enemyColor)
 {
-
     cv::Mat dst;
     vector<ArmorTick> armorTicks;
     BuffTick thisBuffTick;
 
 #ifdef VISUAL
     cv::Mat visual;
+    cv::namedWindow("visual",cv::WINDOW_NORMAL);
     src.copyTo(visual);
     cv::line(visual,cv::Point2i(0,256),cv::Point2f(640,256),cv::Scalar(255,255,255));
     cv::line(visual,cv::Point2i(320,0),cv::Point2f(320,512),cv::Scalar(255,255,255));
@@ -48,6 +48,7 @@ BuffTick BuffTickUtility::Mat2buffTick(const cv::Mat &src,TeamColor enemyColor)
             }
         }
     }
+
     {//对每个装甲板矩形转化为装甲板
         ArmorTick thisArmor;
         std::vector<int> next_nums;//下一个轮廓的下标
@@ -235,11 +236,10 @@ BuffTick BuffTickUtility::Mat2buffTick(const cv::Mat &src,TeamColor enemyColor)
                 cv::circle(visual,thisBuffTick.center,3,cv::Scalar(255,255,255),-1);
                 cv::circle(visual,thisBuffTick.center,thisBuffTick.radius,cv::Scalar(255,255,255),2);
             }
-            cv::namedWindow("visual",cv::WINDOW_NORMAL);
             cv::imshow("visual",visual);
         }
     }
-    cv::waitKey(0);
+    cv::waitKey(1);
 #endif
     return thisBuffTick;
 }
@@ -250,6 +250,7 @@ void BuffTickUtility::preprocess(const cv::Mat &src,cv::Mat &dst,TeamColor enemy
     timeval Timmer1;
     timeval Timmer2;
     int time;
+
     std::vector<cv::Mat> srcColorChannels;
     cv::split(src,srcColorChannels);//分离src三通道
     cv::TickMeter tm;
@@ -269,8 +270,12 @@ void BuffTickUtility::preprocess(const cv::Mat &src,cv::Mat &dst,TeamColor enemy
         cv::threshold(dst,dst,subThreMinBule,subThreMaxBule,cv::THRESH_BINARY);//通道相减的灰度图进行二值化
 
     }
-    cv::Mat elementDilateBule=cv::getStructuringElement(cv::MORPH_RECT,cv::Size(1,3),cv::Point(-1,-1));
-    cv::morphologyEx(dst,dst,cv::MORPH_OPEN ,elementDilateBule);
+    cv::Rect R1;
+    R1.x = 0;R1.y = 450;R1.width = 640;R1.height = 200;
+    cv::rectangle(dst,R1,cv::Scalar(0,0,0),-1);
+
+    //cv::Mat elementDilateBule=cv::getStructuringElement(cv::MORPH_RECT,cv::Size(3,3),cv::Point(-1,-1));
+    //cv::morphologyEx(dst,dst,cv::MORPH_OPEN ,elementDilateBule);
     //cout<<"time:"<<tm.getCounter()<<"||"<<tm.getTimeMilli()<<endl;
 
 }
@@ -363,22 +368,29 @@ void BuffModel::amend(ImageData* imageData)//修正预测模型
     this->last_buff_tick_.timestamp = imageData->timestamp;
     AngleTick A;
     A.angle = last_buff_tick_.angle;
-    A.timestamp = last_buff_tick_.timestamp.tv_sec + last_buff_tick_.timestamp.tv_usec * 1e-6;
+    //scout<<last_buff_tick_.timestamp.tv_sec<<"||"<<last_buff_tick_.timestamp.tv_usec<<endl;
+    A.timestamp = imageData->timestamp;
+    //cout<<fixed<<A.timestamp<<endl;
 
-    static long double virtual_time = 0;
-    virtual_time += 16.667e-03;
-    A.timestamp = virtual_time;
+    //static long double virtual_time = 0;
+    //virtual_time += 16.667e-03;
+    //A.timestamp = virtual_time;
+
     static bool b = true;
-    if(b)
+    static int trigger;
+    trigger = (trigger + 1) % 2;
+    if(trigger == 0)
     {
-        initAngle(A);
-        b = false;
+        if(b)
+        {
+            initAngle(A);
+            b = false;
+        }
+        else
+        {
+            amendAngle(A);
+        }
     }
-    else
-    {
-        amendAngle(A);
-    }
-
 }
 BuffModel::BuffModel(CoordinatTransform* coordinatTransform)
 {
@@ -496,17 +508,28 @@ void BuffModel::amendPhase(const AngleTick preAngleTick,const AngleTick afterAng
     thisSpeed.speed = (afterAngleTick.angle - preAngleTick.angle) / (afterAngleTick.timestamp - preAngleTick.timestamp);
     thisSpeed.timestamp = (afterAngleTick.timestamp + preAngleTick.timestamp) / 2;
 
-    /*调试用的
+    //调试用的
+
     static cv::Mat img = cv::Mat::zeros(800,800,CV_8UC3);
     static int i = 0;
-    static long double ss = 0;
-    ss += thisSpeed.speed;
+    static std::queue<double> ss;
+    static double ssum;
+    ss.push(thisSpeed.speed);
+    ssum += ss.back();
+    if(ss.size() > VARIANCE_BUFFER_MAX)//防止溢出
+    {
+        ssum -= ss.front();
+        ss.pop();
+    }
+
     std::cout<<thisSpeed.speed<<std::endl;
-    cv::circle(img,cv::Point2i(i,thisSpeed.speed * 100 + 400),1,cv::Scalar(255,255,255));
+    cv::line(img,cv::Point2i(i%800,0),cv::Point2i(i%800,800),cv::Scalar(0,0,0));
+    cv::circle(img,cv::Point2i(i%800,thisSpeed.speed * 100 + 400),1,cv::Scalar(255,255,255));
     cv::imshow("img",img);
     i++;
-    std::cout<<ss / i<<std::endl;
-    */
+    std::cout<<"a:"<<ssum / VARIANCE_BUFFER_MAX<<std::endl;
+    cv::circle(img,cv::Point2i(i%800,ssum / VARIANCE_BUFFER_MAX * 100 + 400),1,cv::Scalar(255,0,0));
+
 
     //判断正反转并去除正反特性
     if(thisSpeed.speed > 0)
@@ -529,6 +552,7 @@ void BuffModel::amendPhase(const AngleTick preAngleTick,const AngleTick afterAng
         this->variance_sum_ -= variance_buffer_.front();
         variance_buffer_.pop();
     }
+    //cout<<variance_sum_<<endl;
 
     if(thisSpeed.speed < 2.090 + 0.1 && thisSpeed.speed > 0.52 - 0.1)//2.09是最大转速
     {
