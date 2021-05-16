@@ -59,7 +59,7 @@ void Controller::mainCycle()
         {
             //cout<<"vel:"<<axis_data_->ProjectileVel<<endl;
             //cout<<"RA:"<<axis_data_.x<<"||"<<axis_data_.y<<endl;
-            axis_data_.x = 0;
+            //axis_data_.x = 0;
             cv::Point3f target;
             cv::Point2f gimbal(0,0);
 
@@ -72,7 +72,7 @@ void Controller::mainCycle()
                 uart1_keeper_->set(&ZERO_SIX,AOrR);//有可能设置反了，需要确认一下
             }
 
-            uart1_keeper_->set(&ZERO_SIX,AOrR);//有可能设置反了，需要确认一下
+            uart1_keeper_->set(&ZERO_FIVE,AOrR);//有可能设置反了，需要确认一下
 
             ImageData* ImageData_p;
             do
@@ -107,18 +107,18 @@ void Controller::mainCycle()
                         - axis_data_.x;
                 if(projectile_vel_ == 0)
                 {
-                    projectile_vel_ = 15;
+                    projectile_vel_ = 12;
                 }
-                target.y = -0.12;
-                gimbal.y = TrajectoryCalculation::getElevation(target.z,target.y,12.5)//*projectile_vel_
+                //target.y = -0.12;
+                gimbal.y = TrajectoryCalculation::getElevation(target.z,target.y,projectile_vel_)//*projectile_vel_
                         - axis_data_.y;
 
                 gimbal.x = gimbal.x * 180 / M_PI;
                 gimbal.y = gimbal.y * 180 / M_PI;
-                gimbal.x -= 0.8;
+                gimbal.x -= 1.2;
                 gimbal.y += 1.0;
 
-                //cout<<gimbal.x<<"||"<<gimbal.y<<endl;
+                cout<<gimbal.x<<"||"<<gimbal.y<<endl;
 
                 gimbal.x *= -1;
                 gimbal.y *= -1;
@@ -134,7 +134,6 @@ void Controller::mainCycle()
                 uart1_keeper_->set(&gimbal.x,YawAngle);
                 uart1_keeper_->set(&gimbal.y,PitchAngle);
                 uart1_keeper_->write();
-
             }
 
         }

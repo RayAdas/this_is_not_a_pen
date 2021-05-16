@@ -142,16 +142,17 @@ cv::Point3f CoordinatTransform::CCoord2ACoord(cv::Point3f cameraPoint,cv::Point2
 {
     cv::Point2f rotateAngle;
     cv::Mat _cameraPoint = (cv::Mat_<float>(3,1)<<cameraPoint.x,cameraPoint.y,cameraPoint.z);
-    rotateAngle.x = -axisData.x;
-    rotateAngle.y = -axisData.y;
+
+    rotateAngle.y = -axisData.x;
+    rotateAngle.x = -axisData.y;
     cv::Mat Ry = (cv::Mat_<float>(3,3)<<
                   cos(rotateAngle.y),0,-sin(rotateAngle.y),
                   0,1,0,
                   sin(rotateAngle.y),0,cos(rotateAngle.y));
     cv::Mat Rx = (cv::Mat_<float>(3,3)<<
                   1,0,0,
-                  0,cos(rotateAngle.x),sin(rotateAngle.x),
-                  0,-sin(rotateAngle.x),cos(rotateAngle.x));
+                  0,cos(rotateAngle.x),-sin(rotateAngle.x),
+                  0,sin(rotateAngle.x),cos(rotateAngle.x));
     cv::Mat _axisPoint;
     _axisPoint = Ry * Rx * _cameraPoint;
     cv::Point3f axisPoint(_axisPoint.at<float>(0),_axisPoint.at<float>(1),_axisPoint.at<float>(2));

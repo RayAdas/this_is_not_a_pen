@@ -63,6 +63,9 @@ int main()
                                          smallArmor,
                                          bigArmor);
 
+    cv::Point3f tvec;
+    cv::Point2f last_axis_data_;
+    CoordinatTransform::CCoord2ACoord(tvec,last_axis_data_);
     //创建串口
     char dev[]={"/dev/ttyTHS2"};
     //char dev[]={"/dev/ttyUSB0"};

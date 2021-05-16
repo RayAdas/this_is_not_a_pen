@@ -1,5 +1,5 @@
 #include "buff.h"
-#define VISUAL//开启可视化显示
+//#define VISUAL//开启可视化显示
 BuffTick BuffTickUtility::Mat2buffTick(const cv::Mat &src,TeamColor enemyColor)
 {
     cv::Mat dst;
@@ -270,9 +270,9 @@ void BuffTickUtility::preprocess(const cv::Mat &src,cv::Mat &dst,TeamColor enemy
         cv::threshold(dst,dst,subThreMinBule,subThreMaxBule,cv::THRESH_BINARY);//通道相减的灰度图进行二值化
 
     }
-    cv::Rect R1;
-    R1.x = 0;R1.y = 450;R1.width = 640;R1.height = 200;
-    cv::rectangle(dst,R1,cv::Scalar(0,0,0),-1);
+    //cv::Rect R1;
+    //R1.x = 0;R1.y = 450;R1.width = 640;R1.height = 200;
+    //cv::rectangle(dst,R1,cv::Scalar(0,0,0),-1);
 
     //cv::Mat elementDilateBule=cv::getStructuringElement(cv::MORPH_RECT,cv::Size(3,3),cv::Point(-1,-1));
     //cv::morphologyEx(dst,dst,cv::MORPH_OPEN ,elementDilateBule);
@@ -509,7 +509,7 @@ void BuffModel::amendPhase(const AngleTick preAngleTick,const AngleTick afterAng
     thisSpeed.timestamp = (afterAngleTick.timestamp + preAngleTick.timestamp) / 2;
 
     //调试用的
-
+/*
     static cv::Mat img = cv::Mat::zeros(800,800,CV_8UC3);
     static int i = 0;
     static std::queue<double> ss;
@@ -521,7 +521,6 @@ void BuffModel::amendPhase(const AngleTick preAngleTick,const AngleTick afterAng
         ssum -= ss.front();
         ss.pop();
     }
-
     std::cout<<thisSpeed.speed<<std::endl;
     cv::line(img,cv::Point2i(i%800,0),cv::Point2i(i%800,800),cv::Scalar(0,0,0));
     cv::circle(img,cv::Point2i(i%800,thisSpeed.speed * 100 + 400),1,cv::Scalar(255,255,255));
@@ -529,7 +528,7 @@ void BuffModel::amendPhase(const AngleTick preAngleTick,const AngleTick afterAng
     i++;
     std::cout<<"a:"<<ssum / VARIANCE_BUFFER_MAX<<std::endl;
     cv::circle(img,cv::Point2i(i%800,ssum / VARIANCE_BUFFER_MAX * 100 + 400),1,cv::Scalar(255,0,0));
-
+*/
 
     //判断正反转并去除正反特性
     if(thisSpeed.speed > 0)

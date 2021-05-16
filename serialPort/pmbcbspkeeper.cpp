@@ -145,6 +145,7 @@ void UartKeeper_Infantry::KeeperCycle()
                                         axis_data_buffer_.y = axis_data_buffer_.y * M_PI / 180 * -1;
                                         projectile_vel_buffer_ = *((float*)&(receive_data_buffer_[i + 3]));
                                         //cout<<"RA:"<<axis_data_buffer_.Back->RA_yaw<<"||"<<axis_data_buffer_.Back->RA_pitch<<endl;
+                                        //cout<<"vel:"<<projectile_vel_buffer_<<endl;
                                         i += 23;
                                     }
                                     else

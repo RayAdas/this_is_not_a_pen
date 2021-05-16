@@ -70,7 +70,7 @@ void SerialPort::send_data(const unsigned char* data,const int length)
 }
 ssize_t SerialPort::get_data(unsigned char* r,const int maxLength)
 {
-    read(fd,&r,sizeof(r));
+    //read(fd,&r,sizeof(r));
     ssize_t readLength = read(fd,r,maxLength);
 
     if(readLength > 0)
